@@ -1,0 +1,149 @@
+{
+    "title": "InputData",
+    "type": "object",
+    "properties": {
+        "title": {
+            "title": "Title",
+            "order": 1,
+            "type": "string"
+        },
+        "subTitle": {
+            "title": "Subtitle",
+            "order": 2,
+            "type": "string"
+        },
+        "styling": {
+            "title": "Table Styling",
+            "order": 3,
+            "type": "object",
+            "properties": {
+                "headerFontSize": {
+                    "title": "Header Font Size",
+                    "order": 3,
+                    "dataDrivenDisabled": true,
+                    "type": "string"
+                },
+                "headerBackground": {
+                    "title": "Header Background Color",
+                    "order": 4,
+                    "type": "color",
+                    "color": true
+                },
+                "rowHeight": {
+                    "title": "Row Height",
+                    "order": 5,
+                    "dataDrivenDisabled": true,
+                    "type": "string"
+                },
+                "rowBorder": {
+                    "title": "Row Border",
+                    "description": "You can describe the border in this way: ''1px solid red'' ",
+                    "order": 6,
+                    "dataDrivenDisabled": true,
+                    "type": "string"
+                }
+            }
+        },
+        "columns": {
+            "title": "Column Definitions",
+            "description": "Add columns and define how they should be displayed.",
+            "type": "array",
+            "order": 4,
+            "dataDrivenDisabled": true,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "header": {
+                        "title": "Header Label",
+                        "type": "string",
+                        "required": true,
+                        "order": 1
+                    },
+                    "type": {
+                        "title": "Data Type",
+                        "enum": ["state", "string", "number", "boolean", "button", "image"],
+                        "type": "string",
+                        "dataDrivenDisabled": true,
+                        "order": 2
+                    },
+                    "values": {
+                        "title": "Values",
+                        "type": "array",
+                        "order": 3,
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "value": {
+                                    "title": "Display Value",
+                                    "type": "string",
+                                    "required": true,
+                                    "order": 1
+                                },
+                                "link": {
+                                    "title": "Link URL",
+                                    "type": "string",
+                                    "required": false,
+                                    "order": 2
+                                }
+                            }
+                        }
+                    },
+
+                    "styling": {
+                        "title": "Styling",
+                        "description": "",
+                        "type": "object",
+                        "order": 5,
+                        "properties": {
+                            "precision": {
+                                "title": "Number Precision",
+                                "description": "Number of digits after the decimal point.",
+                                "type": "number",
+                                "dataDrivenDisabled": true,
+                                "order": 3
+                            },
+                            "stateMap": {
+                                "title": "State Map",
+                                "description": "Applicable for datatype 'state' fields only. Describe the State Map as an alternating list like this: \"'ONLINE': 'green', 'DISCONNECTED', 'red'\"",
+                                "type": "string",
+                                "dataDrivenDisabled": true,
+                                "order": 4
+                            },
+                            "width": {
+                                "title": "Column Width",
+                                "type": "number",
+                                "dataDrivenDisabled": true,
+                                "order": 5
+                            },
+                            "fontSize": {
+                                "title": "Font Size",
+                                "type": "string",
+                                "order": 6
+                            },
+                            "fontWeight": {
+                                "title": "Font Weight",
+                                "description": "eg. 800 for bold and 100 for light font.",
+                                "type": "string",
+                                "dataDrivenDisabled": true,
+                                "order": 7
+                            },
+                            "color": {
+                                "title": "Font Color",
+                                "type": "color",
+                                "color": true,
+                                "order": 8
+                            },
+                            "border": {
+                                "title": "Cell Border",
+                                "description": "You can describe the border in this way: '1px solid red'",
+                                "type": "string",
+                                "dataDrivenDisabled": true,
+                                "order": 9
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
