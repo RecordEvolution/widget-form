@@ -1,7 +1,16 @@
 import { html, css, LitElement, PropertyValues } from 'lit'
 import { repeat } from 'lit/directives/repeat.js'
-import { property, state, customElement } from 'lit/decorators.js'
+import { property, state, customElement, query } from 'lit/decorators.js'
 import { InputData, Values } from './definition-schema.js'
+import '@material/web/fab/fab.js'
+import '@material/web/icon/icon.js'
+import '@material/web/dialog/dialog.js'
+import '@material/web/button/text-button.js'
+import '@material/web/textfield/filled-text-field.js'
+import '@material/web/checkbox/checkbox.js'
+import '@material/web/select/filled-select.js'
+import '@material/web/select/select-option.js'
+import { MdDialog } from '@material/web/dialog/dialog.js'
 
 type Column = Exclude<InputData['columns'], undefined>[number]
 type Theme = {
@@ -22,6 +31,10 @@ export class WidgetTable extends LitElement {
     @state() private themeBgColor?: string
     @state() private themeTitleColor?: string
     @state() private themeSubtitleColor?: string
+
+    @state() dialogOpen: boolean = true
+
+    @query('md-dialog') dialog!: MdDialog
 
     version: string = 'versionplaceholder'
 
@@ -130,6 +143,23 @@ export class WidgetTable extends LitElement {
         }
     }
 
+    handleFormSubmit(event: Event) {
+        event.preventDefault()
+        const form = event.target as HTMLFormElement
+        const formData = new FormData(form)
+        const data = Object.fromEntries((formData as any).entries())
+        this.dispatchEvent(
+            new CustomEvent('action-submit', {
+                detail: data,
+                bubbles: false,
+                composed: false
+            })
+        )
+        console.log('submitted form', data)
+        form.reset()
+        this.dialogOpen = false
+    }
+
     static styles = css`
         :host {
             display: block;
@@ -137,6 +167,16 @@ export class WidgetTable extends LitElement {
             box-sizing: border-box;
             position: relative;
             margin: auto;
+        }
+
+        md-fab {
+            --md-fab-icon-color: white;
+            --md-fab-container-color: #007bff;
+            --md-fab-label-text-color: white;
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            z-index: 10;
         }
 
         .paging:not([active]) {
@@ -209,6 +249,52 @@ export class WidgetTable extends LitElement {
             align-items: center;
             justify-content: center;
         }
+
+        /* The dialog classes */
+        .contacts {
+            min-width: 80%;
+        }
+
+        .contacts [slot='header'] {
+            display: flex;
+            flex-direction: row-reverse;
+            align-items: center;
+        }
+
+        .contacts .headline {
+            flex: 1;
+        }
+
+        .contact-content,
+        .contact-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .contact-content {
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .contact-row > * {
+            flex: 1;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        md-filled-select {
+            flex: 1;
+        }
     `
 
     render() {
@@ -248,7 +334,9 @@ export class WidgetTable extends LitElement {
 
             <div
                 class="wrapper"
-                style="color: ${this.themeTitleColor}; background-color: ${this.themeBgColor}"
+                style="color: ${this.themeTitleColor}; 
+                background-color: ${this.themeBgColor}; 
+                position: relative;"
             >
                 <header>
                     <h3 class="paging" ?active=${this.inputData?.title}>${this.inputData?.title}</h3>
@@ -266,7 +354,7 @@ export class WidgetTable extends LitElement {
                             <tr>
                                 ${repeat(
                                     this.inputData?.columns ?? [],
-                                    (col) => col,
+                                    (col, i) => i,
                                     (col, i) => {
                                         return html` <th class="header-${i}">${col.header}</th> `
                                     }
@@ -281,7 +369,7 @@ export class WidgetTable extends LitElement {
                                     return html` <tr>
                                         ${repeat(
                                             row,
-                                            (c) => c,
+                                            (c, idx) => idx,
                                             (cell, i) => html`
                                                 <td class="column-${i}">${this.renderCell(cell, i)}</td>
                                             `
@@ -294,6 +382,82 @@ export class WidgetTable extends LitElement {
                 </div>
                 <div class="paging no-data" ?active=${!this.rows?.length}>No Data</div>
             </div>
+
+            <md-fab
+                aria-label="Add"
+                style="--md-fab-container-color: ${this.theme?.theme_object?.color[0]}"
+                @click=${() => (this.dialogOpen = true)}
+            >
+                <md-icon slot="icon">add</md-icon>
+            </md-fab>
+
+            <md-dialog
+                aria-label="${this.inputData?.formTitle ?? 'Data Entry'}"
+                class="contacts"
+                quick
+                ?open=${this.dialogOpen}
+                escape-key-action="none"
+                scrim-click-action="none"
+                @cancel=${(event: any) => {
+                    event.preventDefault()
+                }}
+                @keydown=${(event: any) => {
+                    if (event.key === 'Escape') event.preventDefault()
+                }}
+                @closed=${() => (this.dialogOpen = false)}
+            >
+                <div slot="headline">${this.inputData?.formTitle ?? 'Data Entry'}</div>
+                <form
+                    id="form"
+                    slot="content"
+                    method="dialog"
+                    class="contact-content"
+                    @submit=${this.handleFormSubmit}
+                >
+                    ${repeat(
+                        this.inputData?.columns?.filter((col) => col.showInForm) ?? [],
+                        (col, i) => i,
+                        (col, i) => {
+                            return col.type === 'boolean'
+                                ? html`<div class="checkbox-container">
+                                      <md-checkbox
+                                          name="${col.header ?? ''}"
+                                          aria-label=${col.header ?? ''}
+                                      ></md-checkbox>
+                                      <label class="label"> ${col.header} </label>
+                                  </div>`
+                                : col.type === 'state'
+                                  ? html` <label class="label">
+                                        ${col.header}
+                                        <md-filled-select name="${col.header ?? ''}">
+                                            ${repeat(
+                                                col.styling?.stateMap
+                                                    ?.split(',')
+                                                    .filter((s, j) => j % 2 === 0) ?? [],
+                                                (state) => state,
+                                                (state) => {
+                                                    return html`<md-select-option
+                                                        value="${state.trim().replaceAll("'", '')}"
+                                                        >${state.trim().replaceAll("'", '')}
+                                                    </md-select-option>`
+                                                }
+                                            )}
+                                        </md-filled-select>
+                                    </label>`
+                                  : html`<md-filled-text-field
+                                        .name="${col.header ?? `column-${i}`}"
+                                        autofocus
+                                        .label="${col.header ?? ''}"
+                                        .type="${col.type === 'number' ? 'number' : 'text'}"
+                                    ></md-filled-text-field>`
+                        }
+                    )}
+                </form>
+                <div slot="actions">
+                    <md-text-button form="form" value="cancel">Cancel</md-text-button>
+                    <md-text-button form="form" value="submit" autofocus>Submit</md-text-button>
+                </div>
+            </md-dialog>
         `
     }
 }

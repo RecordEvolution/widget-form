@@ -1,4 +1,5 @@
 {
+    "formTitle": "Add New Machine",
     "styling": {
         "headerFontSize": "16px",
         "rowHeight": "40px"
@@ -7,6 +8,7 @@
         {
             "header": "State",
             "type": "state",
+            "showInForm": true,
             "values": [
                 { "value": "ONLINE" },
                 { "value": "DISCONNECTED" },
@@ -22,6 +24,7 @@
         {
             "header": "Name",
             "type": "string",
+            "showInForm": true,
             "values": [
                 { "value": "Royal Fortune" },
                 { "value": "Mayflower" },
@@ -37,6 +40,7 @@
         {
             "header": "Distance",
             "type": "number",
+            "showInForm": true,
             "values": [{ "value": 80 }, { "value": 20 }, { "value": 30 }, { "value": 40 }, { "value": 50 }],
             "styling": {
                 "width": "120px",
@@ -47,6 +51,7 @@
         {
             "header": "Active",
             "type": "boolean",
+            "showInForm": true,
             "values": [
                 { "value": true },
                 { "value": false },
@@ -61,6 +66,7 @@
         {
             "header": "Image Link",
             "type": "image",
+            "showInForm": false,
             "values": [
                 {
                     "value": "https://storage.googleapis.com/reswarm-images/mir-200.png",
@@ -90,6 +96,7 @@
         {
             "header": "Link",
             "type": "button",
+            "showInForm": true,
             "values": [
                 { "value": "Google", "link": "https://google.com" },
                 { "value": "IronFlock", "link": "https://www.ironflock.com" },

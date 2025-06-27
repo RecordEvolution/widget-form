@@ -11,13 +11,35 @@
                 width: 100%;
                 height: 100%;
                 background-color: aliceblue;
+                font-family:
+                    Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+                --font-family-serif: Helvetica;
+                color: #291f42;
+                font-weight: 400;
+                line-height: 1.5;
+                min-height: 100vh;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
             }
 
             * {
                 width: 100%;
                 height: 100%;
             }
+
+            .widget {
+            }
         </style>
+        <link
+            rel="preload"
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL@20..48,100..700,0..1"
+            as="style"
+            onload="this.onload=null;this.rel='stylesheet'"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+            rel="stylesheet"
+        />
     </head>
 
     <body>
@@ -25,17 +47,20 @@
         <script src="https://storage.googleapis.com/reswarm-images/ObjectRandomizer.js"></script>
 
         <script type="module">
-            import { html, render } from 'lit'
+            import { render } from 'lit'
+            import { html, unsafeStatic } from 'lit/static-html.js'
+            const packageJson = await fetch('../package.json').then((res) => res.json())
+            const tag = unsafeStatic(`widget-tableedit-${packageJson.version}`)
             import '../dist/widget-tableedit.js'
             const data = await fetch('../src/default-data.json').then((res) => res.json())
             const themeObject = await fetch('themes/vintage.json').then((res) => res.json())
             const theme = { theme_name: 'vintage', theme_object: themeObject }
             render(
                 html`
-                    <widget-tableedit-1.0.0 .theme="${theme}" .inputData=${data}>
+                    <${tag} class="widget" .theme="${theme}" .inputData=${data}>
                         web component is not registered. Make sure to use the tag with the correct version
                         string from the package.json
-                    </widget-tableedit-1.0.0>
+                    </${tag}>
                 `,
                 document.getElementById('demo')
             )

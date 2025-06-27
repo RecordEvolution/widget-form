@@ -7,6 +7,10 @@
 
 export type Title = string;
 export type Subtitle = string;
+/**
+ * Title of the form that will be used to add new entries.
+ */
+export type FormTitle = string;
 export type HeaderFontSize = string;
 export type RowHeight = string;
 /**
@@ -15,6 +19,7 @@ export type RowHeight = string;
 export type RowBorder = string;
 export type HeaderLabel = string;
 export type DataType = "state" | "string" | "number" | "boolean" | "button" | "image";
+export type ShowInForm = boolean;
 export type DisplayValue = string;
 export type LinkURL = string;
 export type Values = {
@@ -27,7 +32,7 @@ export type Values = {
  */
 export type NumberPrecision = number;
 /**
- * Applicable for datatype 'state' fields only. Describe the State Map as an alternating list like this: "'ONLINE': 'green', 'DISCONNECTED', 'red'"
+ * Applicable for datatype 'state' fields only. Describe the State Map as an alternating list like this: "'ONLINE', 'green', 'DISCONNECTED', 'red'"
  */
 export type StateMap = string;
 export type ColumnWidth = number;
@@ -46,6 +51,7 @@ export type CellBorder = string;
 export type ColumnDefinitions = {
   header?: HeaderLabel;
   type?: DataType;
+  showInForm?: ShowInForm;
   values?: Values;
   styling?: Styling;
   [k: string]: unknown;
@@ -54,8 +60,16 @@ export type ColumnDefinitions = {
 export interface InputData {
   title?: Title;
   subTitle?: Subtitle;
+  formTitle?: FormTitle;
+  targetTable?: TargetTable;
   styling?: TableStyling;
   columns?: ColumnDefinitions;
+  [k: string]: unknown;
+}
+/**
+ * The app and table where data entries will be stored.
+ */
+export interface TargetTable {
   [k: string]: unknown;
 }
 export interface TableStyling {
