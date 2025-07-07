@@ -2,15 +2,12 @@ import { html, css, LitElement, PropertyValues } from 'lit'
 import { repeat } from 'lit/directives/repeat.js'
 import { property, state, customElement, query } from 'lit/decorators.js'
 import { InputData, Values } from './definition-schema.js'
+
 import '@material/web/fab/fab.js'
 import '@material/web/icon/icon.js'
 import '@material/web/dialog/dialog.js'
-import '@material/web/button/text-button.js'
-import '@material/web/textfield/filled-text-field.js'
-import '@material/web/checkbox/checkbox.js'
-import '@material/web/select/filled-select.js'
-import '@material/web/select/select-option.js'
-import { MdDialog } from '@material/web/dialog/dialog.js'
+
+import type { MdDialog } from '@material/web/dialog/dialog.js'
 
 type Column = Exclude<InputData['columns'], undefined>[number]
 type Theme = {
@@ -18,7 +15,7 @@ type Theme = {
     theme_object: any
 }
 @customElement('widget-tableedit-versionplaceholder')
-export class WidgetTable extends LitElement {
+export class WidgetTableEdit extends LitElement {
     @property({ type: Object })
     inputData?: InputData
 
@@ -32,7 +29,7 @@ export class WidgetTable extends LitElement {
     @state() private themeTitleColor?: string
     @state() private themeSubtitleColor?: string
 
-    @state() dialogOpen: boolean = true
+    @state() dialogOpen: boolean = false
 
     @query('md-dialog') dialog!: MdDialog
 
@@ -125,6 +122,16 @@ export class WidgetTable extends LitElement {
 
     renderImage(cell: Values[number], colDef: Column) {
         return html`<a href="${cell?.link ?? ''}" target="_blank"><img src="${cell.value ?? ''}" /></a>`
+    }
+
+    openFormDialog() {
+        this.dialogOpen = true
+
+        import('@material/web/button/text-button.js')
+        import('@material/web/textfield/filled-text-field.js')
+        import('@material/web/checkbox/checkbox.js')
+        import('@material/web/select/filled-select.js')
+        import('@material/web/select/select-option.js')
     }
 
     getTextAlign(colDef: Column) {
@@ -386,7 +393,7 @@ export class WidgetTable extends LitElement {
             <md-fab
                 aria-label="Add"
                 style="--md-fab-container-color: ${this.theme?.theme_object?.color[0]}"
-                @click=${() => (this.dialogOpen = true)}
+                @click=${this.openFormDialog}
             >
                 <md-icon slot="icon">add</md-icon>
             </md-fab>
@@ -396,8 +403,6 @@ export class WidgetTable extends LitElement {
                 class="contacts"
                 quick
                 ?open=${this.dialogOpen}
-                escape-key-action="none"
-                scrim-click-action="none"
                 @cancel=${(event: any) => {
                     event.preventDefault()
                 }}
