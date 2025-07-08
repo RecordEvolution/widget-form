@@ -1,4 +1,4 @@
-import { html, css, LitElement, PropertyValues } from 'lit'
+import { html, css, LitElement, PropertyValues, nothing } from 'lit'
 import { repeat } from 'lit/directives/repeat.js'
 import { property, state, customElement, query } from 'lit/decorators.js'
 import { InputData, Values } from './definition-schema.js'
@@ -6,6 +6,12 @@ import { InputData, Values } from './definition-schema.js'
 import '@material/web/fab/fab.js'
 import '@material/web/icon/icon.js'
 import '@material/web/dialog/dialog.js'
+
+import '@material/web/button/text-button.js'
+import '@material/web/textfield/filled-text-field.js'
+import '@material/web/checkbox/checkbox.js'
+import '@material/web/select/filled-select.js'
+import '@material/web/select/select-option.js'
 
 import type { MdDialog } from '@material/web/dialog/dialog.js'
 
@@ -64,12 +70,17 @@ export class WidgetTableEdit extends LitElement {
         if (!this?.inputData?.columns?.length) return
 
         const rows: any[][] = []
-        this.inputData.columns.forEach((col, i) => {
-            col.values?.forEach((v, j) => {
-                if (rows.length <= j) rows.push([])
-                rows[j].push(v)
-            })
-        })
+        const cols = this.inputData.columns.map((col) => col?.values ?? [])
+        const maxLength = Math.max(...cols.map((vals) => vals?.length ?? 0))
+
+        for (let r = 0; r < maxLength; r++) {
+            rows.push([])
+            for (let c = 0; c < cols.length; c++) {
+                const value = cols?.[c]?.[r]
+                rows[r].push(value ?? {})
+            }
+        }
+
         this.rows = rows
     }
 
@@ -121,17 +132,12 @@ export class WidgetTableEdit extends LitElement {
     }
 
     renderImage(cell: Values[number], colDef: Column) {
+        if (!cell?.value) return nothing
         return html`<a href="${cell?.link ?? ''}" target="_blank"><img src="${cell.value ?? ''}" /></a>`
     }
 
     openFormDialog() {
         this.dialogOpen = true
-
-        import('@material/web/button/text-button.js')
-        import('@material/web/textfield/filled-text-field.js')
-        import('@material/web/checkbox/checkbox.js')
-        import('@material/web/select/filled-select.js')
-        import('@material/web/select/select-option.js')
     }
 
     getTextAlign(colDef: Column) {
@@ -176,7 +182,7 @@ export class WidgetTableEdit extends LitElement {
             margin: auto;
         }
 
-        md-fab {
+        .edit-fab {
             --md-fab-icon-color: white;
             --md-fab-container-color: #007bff;
             --md-fab-label-text-color: white;
@@ -392,7 +398,8 @@ export class WidgetTableEdit extends LitElement {
 
             <md-fab
                 aria-label="Add"
-                style="--md-fab-container-color: ${this.theme?.theme_object?.color[0]}"
+                class="edit-fab"
+                style="--md-fab-container-color: ${this.theme?.theme_object?.color[0] ?? '#9064f7'}"
                 @click=${this.openFormDialog}
             >
                 <md-icon slot="icon">add</md-icon>

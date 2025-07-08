@@ -75,7 +75,7 @@
                         "order": 1
                     },
                     "type": {
-                        "title": "Data Type",
+                        "title": "Column Type",
                         "enum": ["state", "string", "number", "boolean", "button", "image"],
                         "type": "string",
                         "dataDrivenDisabled": true,
@@ -88,6 +88,13 @@
                         "dataDrivenDisabled": true,
                         "required": false,
                         "order": 3
+                    },
+                    "targetColumn": {
+                        "title": "Target Column",
+                        "type": "targetColumn",
+                        "dataDrivenDisabled": true,
+                        "required": true,
+                        "order": 4
                     },
                     "values": {
                         "title": "Values",

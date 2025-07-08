@@ -52,6 +52,7 @@ export type ColumnDefinitions = {
   header?: HeaderLabel;
   type?: DataType;
   showInForm?: ShowInForm;
+  targetColumn?: TargetColumn;
   values?: Values;
   styling?: Styling;
   [k: string]: unknown;
@@ -80,6 +81,9 @@ export interface TableStyling {
   [k: string]: unknown;
 }
 export interface HeaderBackgroundColor {
+  [k: string]: unknown;
+}
+export interface TargetColumn {
   [k: string]: unknown;
 }
 export interface Styling {
