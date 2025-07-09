@@ -8,94 +8,83 @@
 export type Title = string;
 export type Subtitle = string;
 /**
- * Title of the form that will be used to add new entries.
+ * If checked, a button will be shown to open the form. If unchecked, the form will be shown directly.
  */
-export type FormTitle = string;
-export type HeaderFontSize = string;
-export type RowHeight = string;
+export type FormOpenButton = boolean;
+export type Label = string;
+export type FieldType = "dropdown" | "textfield" | "numberfield" | "checkbox" | "textarea" | "datetime";
 /**
- * You can describe the border in this way: ''1px solid red''
+ * If false, this field will be hidden in the form but still saved on submit.
  */
-export type RowBorder = string;
-export type HeaderLabel = string;
-export type DataType = "state" | "string" | "number" | "boolean" | "button" | "image";
-export type ShowInForm = boolean;
-export type DisplayValue = string;
-export type LinkURL = string;
-export type Values = {
-  value?: DisplayValue;
-  link?: LinkURL;
+export type HiddenField = boolean;
+/**
+ * This field must be filled out before the form can be submitted.
+ */
+export type Required = boolean;
+/**
+ * This text will be shown as a description at the field.
+ */
+export type HintText = string;
+/**
+ * This value will be used if the user does not provide a value.
+ */
+export type DefaultValue = string;
+/**
+ * Minimum value for number fields.
+ */
+export type MinimumValue = number;
+/**
+ * Maximum value for number fields.
+ */
+export type MaximumValue = number;
+/**
+ * Regular expression for validating text fields.
+ */
+export type ValidationRegex = string;
+/**
+ * Label shown in the dropdown.
+ */
+export type DisplayLabel = string;
+/**
+ * Value stored in the database.
+ */
+export type Value = string;
+/**
+ * List of values for the dropdown field.
+ */
+export type DropdownValues = {
+  displayLabel?: DisplayLabel;
+  value?: Value;
   [k: string]: unknown;
 }[];
 /**
- * Number of digits after the decimal point.
+ * Add fields and define how they should be stored.
  */
-export type NumberPrecision = number;
-/**
- * Applicable for datatype 'state' fields only. Describe the State Map as an alternating list like this: "'ONLINE', 'green', 'DISCONNECTED', 'red'"
- */
-export type StateMap = string;
-export type ColumnWidth = number;
-export type FontSize = string;
-/**
- * eg. 800 for bold and 100 for light font.
- */
-export type FontWeight = string;
-/**
- * You can describe the border in this way: '1px solid red'
- */
-export type CellBorder = string;
-/**
- * Add columns and define how they should be displayed.
- */
-export type ColumnDefinitions = {
-  header?: HeaderLabel;
-  type?: DataType;
-  showInForm?: ShowInForm;
+export type FormFields = {
+  label?: Label;
+  type?: FieldType;
+  hiddenField?: HiddenField;
+  required?: Required;
+  description?: HintText;
   targetColumn?: TargetColumn;
-  values?: Values;
-  styling?: Styling;
+  defaultValue?: DefaultValue;
+  min?: MinimumValue;
+  max?: MaximumValue;
+  validation?: ValidationRegex;
+  values?: DropdownValues;
   [k: string]: unknown;
 }[];
 
 export interface InputData {
   title?: Title;
   subTitle?: Subtitle;
-  formTitle?: FormTitle;
-  targetTable?: TargetTable;
-  styling?: TableStyling;
-  columns?: ColumnDefinitions;
+  formButton?: FormOpenButton;
+  formFields?: FormFields;
   [k: string]: unknown;
 }
 /**
- * The app and table where data entries will be stored.
+ * The column in the target table where this field's data will be stored. This will be combined with all other fields in this form connected with the same target table.
  */
-export interface TargetTable {
-  [k: string]: unknown;
-}
-export interface TableStyling {
-  headerFontSize?: HeaderFontSize;
-  headerBackground?: HeaderBackgroundColor;
-  rowHeight?: RowHeight;
-  rowBorder?: RowBorder;
-  [k: string]: unknown;
-}
-export interface HeaderBackgroundColor {
-  [k: string]: unknown;
-}
 export interface TargetColumn {
-  [k: string]: unknown;
-}
-export interface Styling {
-  precision?: NumberPrecision;
-  stateMap?: StateMap;
-  width?: ColumnWidth;
-  fontSize?: FontSize;
-  fontWeight?: FontWeight;
-  color?: FontColor;
-  border?: CellBorder;
-  [k: string]: unknown;
-}
-export interface FontColor {
   [k: string]: unknown;
 }

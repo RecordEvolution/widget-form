@@ -1,21 +1,24 @@
 import { html, css, LitElement, PropertyValues, nothing } from 'lit'
 import { repeat } from 'lit/directives/repeat.js'
 import { property, state, customElement, query } from 'lit/decorators.js'
-import { InputData, Values } from './definition-schema.js'
+import { InputData, FormFields } from './definition-schema.js'
 
 import '@material/web/fab/fab.js'
 import '@material/web/icon/icon.js'
 import '@material/web/dialog/dialog.js'
 
 import '@material/web/button/text-button.js'
+import '@material/web/button/outlined-button.js'
+import '@material/web/button/filled-button.js'
 import '@material/web/textfield/filled-text-field.js'
 import '@material/web/checkbox/checkbox.js'
 import '@material/web/select/filled-select.js'
 import '@material/web/select/select-option.js'
+// import 'lit-flatpickr'
 
 import type { MdDialog } from '@material/web/dialog/dialog.js'
 
-type Column = Exclude<InputData['columns'], undefined>[number]
+type Column = Exclude<InputData['formFields'], undefined>[number]
 type Theme = {
     theme_name: string
     theme_object: any
@@ -28,9 +31,6 @@ export class WidgetTableEdit extends LitElement {
     @property({ type: Object })
     theme?: Theme
 
-    @state()
-    rows: Values[] = []
-
     @state() private themeBgColor?: string
     @state() private themeTitleColor?: string
     @state() private themeSubtitleColor?: string
@@ -42,10 +42,6 @@ export class WidgetTableEdit extends LitElement {
     version: string = 'versionplaceholder'
 
     update(changedProperties: Map<string, any>) {
-        if (changedProperties.has('inputData')) {
-            this.transformInputData()
-        }
-
         if (changedProperties.has('theme')) {
             this.registerTheme(this.theme)
         }
@@ -66,94 +62,8 @@ export class WidgetTableEdit extends LitElement {
             cssTextColor || this.theme?.theme_object?.title?.subtextStyle?.color || this.themeTitleColor
     }
 
-    transformInputData() {
-        if (!this?.inputData?.columns?.length) return
-
-        const rows: any[][] = []
-        const cols = this.inputData.columns.map((col) => col?.values ?? [])
-        const maxLength = Math.max(...cols.map((vals) => vals?.length ?? 0))
-
-        for (let r = 0; r < maxLength; r++) {
-            rows.push([])
-            for (let c = 0; c < cols.length; c++) {
-                const value = cols?.[c]?.[r]
-                rows[r].push(value ?? {})
-            }
-        }
-
-        this.rows = rows
-    }
-
-    renderCell(cell: any, i: number) {
-        const colDef = this?.inputData?.columns?.[i]
-
-        switch (colDef?.type) {
-            case 'string':
-                return this.renderString(cell.value, colDef)
-            case 'number':
-                return this.renderNumber(cell.value, colDef)
-            case 'boolean':
-                return this.renderBoolean(cell.value, colDef)
-            case 'state':
-                return this.renderState(cell.value, colDef)
-            case 'button':
-                return this.renderButton(cell, colDef)
-            case 'image':
-                return this.renderImage(cell, colDef)
-        }
-    }
-
-    renderString(value: string, colDef: Column) {
-        return html`${value}`
-    }
-
-    renderNumber(value: number, colDef: Column) {
-        if (typeof value !== 'number' || isNaN(value)) return ''
-        return html`${value?.toFixed(colDef?.styling?.precision)}`
-    }
-
-    renderBoolean(value: any, colDef: Column) {
-        return value ? '✓' : '-'
-    }
-
-    renderState(value: any, colDef: Column) {
-        const _stateMap = colDef.styling?.stateMap
-            ?.split(',')
-            .map((d: string) => d.trim().replaceAll("'", ''))
-        const stateMap = _stateMap?.reduce((p: any, c: string, i: number, a: any[]) => {
-            if (i % 2 === 0) p[c] = a[i + 1]
-            return p
-        }, {})
-        return html`<div class="statusbox" style="background-color: ${stateMap[value]}"></div>`
-    }
-
-    renderButton(cell: Values[number], colDef: Column) {
-        return html`<a href="${cell?.link ?? ''}" target="_blank">${cell.value ?? ''}</a>`
-    }
-
-    renderImage(cell: Values[number], colDef: Column) {
-        if (!cell?.value) return nothing
-        return html`<a href="${cell?.link ?? ''}" target="_blank"><img src="${cell.value ?? ''}" /></a>`
-    }
-
     openFormDialog() {
         this.dialogOpen = true
-    }
-
-    getTextAlign(colDef: Column) {
-        switch (colDef.type) {
-            case 'number':
-                return 'end'
-            case 'button':
-            case 'string':
-                return 'start'
-            case 'boolean':
-            case 'state':
-            case 'image':
-                return 'center'
-            default:
-                return 'start'
-        }
     }
 
     handleFormSubmit(event: Event) {
@@ -161,21 +71,169 @@ export class WidgetTableEdit extends LitElement {
         const form = event.target as HTMLFormElement
         const formData = new FormData(form)
         const data = Object.fromEntries((formData as any).entries())
+
+        for (const field of this.inputData?.formFields ?? []) {
+        }
+
+        const submitData = this.inputData?.formFields?.map((field, i) => {
+            return {
+                swarm_app_databackend_key: field.targetColumn?.swarm_app_databackend_key,
+                table_name: field.targetColumn?.tablename,
+                column_name: field.targetColumn?.column,
+                value: this.formatValue(
+                    data[`column-${i}`] ?? field.defaultValue ?? '',
+                    field.type ?? 'textfield'
+                )
+            }
+        })
         this.dispatchEvent(
             new CustomEvent('action-submit', {
-                detail: data,
+                detail: submitData,
                 bubbles: false,
                 composed: false
             })
         )
-        console.log('submitted form', data)
         form.reset()
         this.dialogOpen = false
     }
 
+    formatValue(value: string, type: string): any {
+        switch (type) {
+            case 'numberfield':
+                return parseFloat(value)
+            case 'checkbox':
+                return value === 'on' ? true : false
+            default:
+                return value
+        }
+    }
+
+    renderTextField(field: Column, i: number) {
+        return html`
+            <md-filled-text-field
+                .name="column-${i}"
+                .label="${field.label ?? ''}"
+                .type="${field.type === 'numberfield' ? 'number' : 'text'}"
+                .placeholder="${field.defaultValue ?? ''}"
+                .pattern="${field.validation ?? ''}"
+                supporting-text=${field.description ?? ''}
+                validation-message="${field.validationMessage ?? 'Invalid input'}"
+                ?required=${field.required && !field.defaultValue}
+            ></md-filled-text-field>
+        `
+    }
+
+    renderNumberField(field: Column, i: number) {
+        return html`
+            <md-filled-text-field
+                .name="column-${i}"
+                .label="${field.label ?? ''}"
+                style="width: 200px;"
+                type="number"
+                .placeholder="${field.defaultValue ?? ''}"
+                step="any"
+                min=${field.min ?? ''}
+                max=${field.max ?? ''}
+                supporting-text=${field.description ?? ''}
+                ?required=${field.required && !field.defaultValue}
+            ></md-filled-text-field>
+        `
+    }
+
+    renderCheckbox(field: Column, i: number) {
+        return html`
+            <div class="checkbox-container">
+                <md-checkbox
+                    name="column-${i}"
+                    aria-label=${field.label ?? ''}
+                    ?checked=${field.defaultValue === 'true'}
+                    supporting-text=${field.description ?? ''}
+                    ?required=${field.required && !field.defaultValue}
+                ></md-checkbox>
+                <label class="label"> ${field.label} </label>
+            </div>
+        `
+    }
+
+    renderTextArea(field: Column, i: number) {
+        return html`
+            <md-filled-text-field
+                .name="column-${i}"
+                .label="${field.label ?? ''}"
+                type="textarea"
+                .placeholder="${field.defaultValue ?? ''}"
+                rows="3"
+                ?required=${field.required && !field.defaultValue}
+                supporting-text=${field.description ?? ''}
+            ></md-filled-text-field>
+        `
+    }
+
+    renderDropdown(field: Column, i: number) {
+        return html`
+            <label class="label">
+                ${field.label}
+                <md-filled-select
+                    name="column-${i}"
+                    supporting-text=${field.description ?? ''}
+                    ?required=${field.required && !field.defaultValue}
+                >
+                    ${repeat(
+                        field.values ?? [],
+                        (val) => val.value,
+                        (val) => {
+                            return html`
+                                <md-select-option
+                                    .value="${val.value ?? ''}"
+                                    ?selected="${val.value === field.defaultValue}"
+                                >
+                                    ${val.displayLabel}
+                                </md-select-option>
+                            `
+                        }
+                    )}
+                </md-filled-select>
+            </label>
+        `
+    }
+
+    renderDateTimeField(field: Column, i: number) {
+        // return html`
+        //     <label id="x" class="label"> ${field.label} </label>
+        //     <lit-flatpickr
+        //         .name="column-${i}"
+        //         .label="${field.label ?? ''}"
+        //         allowInput
+        //         enableTime
+        //         mode="single"
+        //         dateFormat="Y-m-d H:i:S"
+        //         altFormat="Y-m-d H:i:S"
+        //         time_24hr
+        //         .defaultDate="${field.defaultValue}"
+        //         showMonths="1"
+        //         weekNumbers
+        //     >
+        //         <input />
+        //     </lit-flatpickr>
+        // `
+
+        return html`
+            <md-filled-text-field
+                .name="column-${i}"
+                style="width: 200px;"
+                .label="${field.label ?? ''}"
+                type="datetime-local"
+                .value="${field.defaultValue ?? ''}"
+                supporting-text=${field.description ?? ''}
+                ?required=${field.required && !field.defaultValue}
+            ></md-filled-text-field>
+        `
+    }
+
     static styles = css`
         :host {
-            display: block;
+            display: flex;
+            flex-direction: column;
             font-family: sans-serif;
             box-sizing: border-box;
             position: relative;
@@ -199,8 +257,17 @@ export class WidgetTableEdit extends LitElement {
         .wrapper {
             display: flex;
             flex-direction: column;
-            height: 100%;
-            width: 100%;
+            padding: 16px;
+            box-sizing: border-box;
+            overflow: auto;
+        }
+
+        .form-actions {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 16px;
         }
 
         h3 {
@@ -221,75 +288,33 @@ export class WidgetTableEdit extends LitElement {
             box-sizing: border-box;
         }
 
-        .tableFixHead {
-            overflow-y: auto;
-            border-radius: 6px;
-        }
-        .tableFixHead thead {
-            position: sticky;
-            top: 0px;
-            overflow-x: auto;
-        }
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-        th,
-        td {
-            padding: 0px 16px;
-            box-sizing: border-box;
-        }
-
-        .statusbox {
-            width: 24px;
-            height: 12px;
-            margin: auto;
-            border-radius: 6px;
-        }
-
-        img {
-            width: 100%; /* Set the width of the container */
-            height: 100%;
-            object-fit: contain;
-        }
-
-        .no-data {
-            font-size: 20px;
-            display: flex;
-            height: 100%;
-            width: 100%;
-            text-align: center;
-            align-items: center;
-            justify-content: center;
-        }
-
         /* The dialog classes */
-        .contacts {
+        .form {
             min-width: 80%;
         }
 
-        .contacts [slot='header'] {
+        .form [slot='header'] {
             display: flex;
             flex-direction: row-reverse;
             align-items: center;
         }
 
-        .contacts .headline {
+        .form .headline {
             flex: 1;
         }
 
-        .contact-content,
-        .contact-row {
+        .form-content,
+        .form-row {
             display: flex;
             gap: 8px;
         }
 
-        .contact-content {
+        .form-content {
             flex-direction: column;
             gap: 24px;
         }
 
-        .contact-row > * {
+        .form-row > * {
             flex: 1;
         }
 
@@ -301,175 +326,114 @@ export class WidgetTableEdit extends LitElement {
 
         .label {
             display: flex;
-            align-items: center;
-            gap: 8px;
+            flex-direction: column;
         }
 
         md-filled-select {
             flex: 1;
         }
+
+        md-dialog {
+            overflow: visible;
+        }
+
+        lit-flatpickr {
+            z-index: 1000;
+        }
     `
 
     render() {
         return html`
-            <style>
+            <header>
+                <h3 class="paging" ?active=${this.inputData?.title}>${this.inputData?.title}</h3>
+                <p class="paging" ?active=${this.inputData?.subTitle}>${this.inputData?.subTitle}</p>
+            </header>
+            ${!this.inputData?.formButton
+                ? html`
+                      <div class="wrapper">
+                          ${this.renderForm()}
+                          <div class="form-actions">
+                              <md-outlined-button form="form" value="cancel" type="button"
+                                  >Cancel</md-outlined-button
+                              >
+                              <md-filled-button form="form" value="submit" type="submit" autofocus
+                                  >Submit</md-filled-button
+                              >
+                          </div>
+                      </div>
+                  `
+                : html`
+                      <md-fab
+                          aria-label="Add"
+                          class="edit-fab"
+                          style="--md-fab-container-color: ${this.theme?.theme_object?.color[0] ?? '#9064f7'}"
+                          @click=${this.openFormDialog}
+                      >
+                          <md-icon slot="icon">add</md-icon>
+                      </md-fab>
+
+                      <md-dialog
+                          aria-label="${this.inputData?.title ?? 'Data Entry'}"
+                          class="form"
+                          quick
+                          ?open=${this.dialogOpen}
+                          @cancel=${(event: any) => {
+                              event.preventDefault()
+                          }}
+                          @keydown=${(event: any) => {
+                              if (event.key === 'Escape') event.preventDefault()
+                          }}
+                          @closed=${() => (this.dialogOpen = false)}
+                      >
+                          <div slot="headline">${this.inputData?.title ?? 'Data Entry'}</div>
+                          ${this.renderForm()}
+                          <div slot="actions">
+                              <md-outlined-button
+                                  form="form"
+                                  value="cancel"
+                                  type="button"
+                                  @click=${() => this.dialog?.close()}
+                                  >Cancel</md-outlined-button
+                              >
+                              <md-filled-button form="form" value="submit" type="submit" autofocus
+                                  >Submit</md-filled-button
+                              >
+                          </div>
+                      </md-dialog>
+                  `}
+        `
+    }
+
+    renderForm() {
+        return html`
+            <form
+                id="form"
+                slot="content"
+                method="dialog"
+                class="form-content"
+                @submit=${this.handleFormSubmit}
+            >
                 ${repeat(
-                    this.inputData?.columns ?? [],
-                    (col, i) => i,
-                    (col, i) => {
-                        return `
-                            .column-${i} {
-                                width: ${col.styling?.width};
-                                text-align: ${this.getTextAlign(col)};
-                                font-size: ${col.styling?.fontSize};
-                                font-weight: ${col.styling?.fontWeight};
-                                color: ${col.styling?.color || this.themeSubtitleColor};
-                                border: ${col.styling?.border};
-                                height: ${this?.inputData?.styling?.rowHeight};
-                            }
-                            .header-${i} {
-                                width: ${col.width};
-                                text-align: ${this.getTextAlign(col)};
-                                border: ${col.border};
-                            }
-                            thead {
-                                font-size: ${this?.inputData?.styling?.headerFontSize};
-                                background: ${this?.inputData?.styling?.headerBackground};
-                            }
-                            tr {
-                                height: ${this?.inputData?.styling?.rowHeight};
-                                border-bottom: ${this?.inputData?.styling?.rowBorder ?? '1px solid #ddd'};
-                            }
-                        `
+                    this.inputData?.formFields?.filter((field) => !field.hiddenField) ?? [],
+                    (field, i) => i,
+                    (field, i) => {
+                        switch (field.type) {
+                            case 'textfield':
+                                return this.renderTextField(field, i)
+                            case 'numberfield':
+                                return this.renderNumberField(field, i)
+                            case 'datetime':
+                                return this.renderDateTimeField(field, i)
+                            case 'textarea':
+                                return this.renderTextArea(field, i)
+                            case 'dropdown':
+                                return this.renderDropdown(field, i)
+                            case 'checkbox':
+                                return this.renderCheckbox(field, i)
+                        }
                     }
                 )}
-            </style>
-
-            <div
-                class="wrapper"
-                style="color: ${this.themeTitleColor}; 
-                background-color: ${this.themeBgColor}; 
-                position: relative;"
-            >
-                <header>
-                    <h3 class="paging" ?active=${this.inputData?.title}>${this.inputData?.title}</h3>
-                    <p
-                        class="paging"
-                        ?active=${this.inputData?.subTitle}
-                        style="color: ${this.themeSubtitleColor}"
-                    >
-                        ${this.inputData?.subTitle}
-                    </p>
-                </header>
-                <div class="tableFixHead" style="${this.rows?.length ? 'height: 100%' : ''}">
-                    <table>
-                        <thead>
-                            <tr>
-                                ${repeat(
-                                    this.inputData?.columns ?? [],
-                                    (col, i) => i,
-                                    (col, i) => {
-                                        return html` <th class="header-${i}">${col.header}</th> `
-                                    }
-                                )}
-                            </tr>
-                        </thead>
-                        <tbody class="paging" ?active=${this.rows?.length}>
-                            ${repeat(
-                                this.rows.reverse() ?? [],
-                                (row, idx) => idx,
-                                (row) => {
-                                    return html` <tr>
-                                        ${repeat(
-                                            row,
-                                            (c, idx) => idx,
-                                            (cell, i) => html`
-                                                <td class="column-${i}">${this.renderCell(cell, i)}</td>
-                                            `
-                                        )}
-                                    </tr>`
-                                }
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-                <div class="paging no-data" ?active=${!this.rows?.length}>No Data</div>
-            </div>
-
-            <md-fab
-                aria-label="Add"
-                class="edit-fab"
-                style="--md-fab-container-color: ${this.theme?.theme_object?.color[0] ?? '#9064f7'}"
-                @click=${this.openFormDialog}
-            >
-                <md-icon slot="icon">add</md-icon>
-            </md-fab>
-
-            <md-dialog
-                aria-label="${this.inputData?.formTitle ?? 'Data Entry'}"
-                class="contacts"
-                quick
-                ?open=${this.dialogOpen}
-                @cancel=${(event: any) => {
-                    event.preventDefault()
-                }}
-                @keydown=${(event: any) => {
-                    if (event.key === 'Escape') event.preventDefault()
-                }}
-                @closed=${() => (this.dialogOpen = false)}
-            >
-                <div slot="headline">${this.inputData?.formTitle ?? 'Data Entry'}</div>
-                <form
-                    id="form"
-                    slot="content"
-                    method="dialog"
-                    class="contact-content"
-                    @submit=${this.handleFormSubmit}
-                >
-                    ${repeat(
-                        this.inputData?.columns?.filter((col) => col.showInForm) ?? [],
-                        (col, i) => i,
-                        (col, i) => {
-                            return col.type === 'boolean'
-                                ? html`<div class="checkbox-container">
-                                      <md-checkbox
-                                          name="${col.header ?? ''}"
-                                          aria-label=${col.header ?? ''}
-                                      ></md-checkbox>
-                                      <label class="label"> ${col.header} </label>
-                                  </div>`
-                                : col.type === 'state'
-                                  ? html` <label class="label">
-                                        ${col.header}
-                                        <md-filled-select name="${col.header ?? ''}">
-                                            ${repeat(
-                                                col.styling?.stateMap
-                                                    ?.split(',')
-                                                    .filter((s, j) => j % 2 === 0) ?? [],
-                                                (state) => state,
-                                                (state) => {
-                                                    return html`<md-select-option
-                                                        value="${state.trim().replaceAll("'", '')}"
-                                                        >${state.trim().replaceAll("'", '')}
-                                                    </md-select-option>`
-                                                }
-                                            )}
-                                        </md-filled-select>
-                                    </label>`
-                                  : html`<md-filled-text-field
-                                        .name="${col.header ?? `column-${i}`}"
-                                        autofocus
-                                        .label="${col.header ?? ''}"
-                                        .type="${col.type === 'number' ? 'number' : 'text'}"
-                                    ></md-filled-text-field>`
-                        }
-                    )}
-                </form>
-                <div slot="actions">
-                    <md-text-button form="form" value="cancel">Cancel</md-text-button>
-                    <md-text-button form="form" value="submit" autofocus>Submit</md-text-button>
-                </div>
-            </md-dialog>
+            </form>
         `
     }
 }

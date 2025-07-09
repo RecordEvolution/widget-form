@@ -5,172 +5,143 @@
         "title": {
             "title": "Title",
             "order": 1,
+            "dataDrivenDisabled": true,
             "type": "string"
         },
         "subTitle": {
             "title": "Subtitle",
             "order": 2,
-            "type": "string"
-        },
-        "formTitle": {
-            "title": "Form Title",
-            "description": "Title of the form that will be used to add new entries.",
-            "order": 3,
-            "type": "string"
-        },
-        "targetTable": {
-            "title": "Target Table",
-            "description": "The app and table where data entries will be stored.",
-            "order": 2,
             "dataDrivenDisabled": true,
-            "type": "targetTable"
+            "type": "string"
         },
-        "styling": {
-            "title": "Table Styling",
-            "order": 3,
-            "type": "object",
-            "properties": {
-                "headerFontSize": {
-                    "title": "Header Font Size",
-                    "order": 3,
-                    "dataDrivenDisabled": true,
-                    "type": "string"
-                },
-                "headerBackground": {
-                    "title": "Header Background Color",
-                    "order": 4,
-                    "type": "color",
-                    "dataDrivenDisabled": true,
-                    "color": true
-                },
-                "rowHeight": {
-                    "title": "Row Height",
-                    "order": 5,
-                    "dataDrivenDisabled": true,
-                    "type": "string"
-                },
-                "rowBorder": {
-                    "title": "Row Border",
-                    "description": "You can describe the border in this way: ''1px solid red'' ",
-                    "order": 6,
-                    "dataDrivenDisabled": true,
-                    "type": "string"
-                }
-            }
+        "formButton": {
+            "title": "Form Open Button",
+            "description": "If checked, a button will be shown to open the form. If unchecked, the form will be shown directly.",
+            "dataDrivenDisabled": true,
+            "type": "boolean",
+            "order": 3
         },
-        "columns": {
-            "title": "Column Definitions",
-            "description": "Add columns and define how they should be displayed.",
+        "formFields": {
+            "title": "Form Fields",
+            "description": "Add fields and define how they should be stored.",
             "type": "array",
             "order": 4,
             "dataDrivenDisabled": true,
             "items": {
                 "type": "object",
                 "properties": {
-                    "header": {
-                        "title": "Header Label",
+                    "label": {
+                        "title": "Label",
                         "type": "string",
                         "dataDrivenDisabled": true,
                         "required": true,
                         "order": 1
                     },
                     "type": {
-                        "title": "Column Type",
-                        "enum": ["state", "string", "number", "boolean", "button", "image"],
+                        "title": "Field Type",
+                        "enum": ["dropdown", "textfield", "numberfield", "checkbox", "textarea", "datetime"],
                         "type": "string",
                         "dataDrivenDisabled": true,
                         "required": true,
                         "order": 2
                     },
-                    "showInForm": {
-                        "title": "Show in Form",
+                    "hiddenField": {
+                        "title": "Hidden Field",
                         "type": "boolean",
+                        "description": "If false, this field will be hidden in the form but still saved on submit.",
                         "dataDrivenDisabled": true,
-                        "required": false,
                         "order": 3
+                    },
+                    "required": {
+                        "title": "Required",
+                        "type": "boolean",
+                        "description": "This field must be filled out before the form can be submitted. Ignored when a default value is provided.",
+                        "dataDrivenDisabled": true,
+                        "order": 4
+                    },
+                    "description": {
+                        "title": "Hint Text",
+                        "type": "string",
+                        "description": "This text will be shown as a description at the field.",
+                        "dataDrivenDisabled": true,
+                        "order": 5
                     },
                     "targetColumn": {
                         "title": "Target Column",
                         "type": "targetColumn",
+                        "description": "The column in the target table where this field's data will be stored. This will be combined with all other fields in this form connected with the same target table.",
                         "dataDrivenDisabled": true,
                         "required": true,
-                        "order": 4
+                        "order": 6
+                    },
+                    "defaultValue": {
+                        "title": "Default Value",
+                        "description": "This value will be used if the user does not provide a value.",
+                        "type": "string",
+                        "order": 7,
+                        "dataDrivenDisabled": true
+                    },
+                    "min": {
+                        "title": "Minimum Value",
+                        "type": "number",
+                        "description": "Minimum value for number fields.",
+                        "dataDrivenDisabled": true,
+                        "condition": {
+                            "relativePath": "../type",
+                            "showIfValueIn": ["numberfield"]
+                        },
+                        "order": 8
+                    },
+                    "max": {
+                        "title": "Maximum Value",
+                        "type": "number",
+                        "description": "Maximum value for number fields.",
+                        "dataDrivenDisabled": true,
+                        "condition": {
+                            "relativePath": "../type",
+                            "showIfValueIn": ["numberfield"]
+                        },
+                        "order": 9
+                    },
+                    "validation": {
+                        "title": "Validation Regex",
+                        "type": "string",
+                        "description": "Regular expression for validating text fields.",
+                        "dataDrivenDisabled": true,
+                        "condition": {
+                            "relativePath": "../type",
+                            "showIfValueIn": ["textfield"]
+                        },
+                        "order": 10
                     },
                     "values": {
-                        "title": "Values",
+                        "title": "Dropdown Values",
                         "type": "array",
-                        "order": 3,
+                        "description": "List of values for the dropdown field.",
+                        "condition": {
+                            "relativePath": "../type",
+                            "showIfValueIn": ["dropdown"]
+                        },
                         "items": {
                             "type": "object",
                             "properties": {
-                                "value": {
-                                    "title": "Display Value",
+                                "displayLabel": {
+                                    "title": "Display Label",
                                     "type": "string",
+                                    "description": "Label shown in the dropdown.",
                                     "required": true,
                                     "order": 1
                                 },
-                                "link": {
-                                    "title": "Link URL",
+                                "value": {
+                                    "title": "Value",
                                     "type": "string",
-                                    "required": false,
+                                    "description": "Value stored in the database.",
+                                    "required": true,
                                     "order": 2
                                 }
                             }
-                        }
-                    },
-
-                    "styling": {
-                        "title": "Styling",
-                        "description": "",
-                        "type": "object",
-                        "order": 5,
-                        "properties": {
-                            "precision": {
-                                "title": "Number Precision",
-                                "description": "Number of digits after the decimal point.",
-                                "type": "number",
-                                "dataDrivenDisabled": true,
-                                "order": 3
-                            },
-                            "stateMap": {
-                                "title": "State Map",
-                                "description": "Applicable for datatype 'state' fields only. Describe the State Map as an alternating list like this: \"'ONLINE', 'green', 'DISCONNECTED', 'red'\"",
-                                "type": "string",
-                                "dataDrivenDisabled": true,
-                                "order": 4
-                            },
-                            "width": {
-                                "title": "Column Width",
-                                "type": "number",
-                                "dataDrivenDisabled": true,
-                                "order": 5
-                            },
-                            "fontSize": {
-                                "title": "Font Size",
-                                "type": "string",
-                                "order": 6
-                            },
-                            "fontWeight": {
-                                "title": "Font Weight",
-                                "description": "eg. 800 for bold and 100 for light font.",
-                                "type": "string",
-                                "dataDrivenDisabled": true,
-                                "order": 7
-                            },
-                            "color": {
-                                "title": "Font Color",
-                                "type": "color",
-                                "color": true,
-                                "order": 8
-                            },
-                            "border": {
-                                "title": "Cell Border",
-                                "description": "You can describe the border in this way: '1px solid red'",
-                                "type": "string",
-                                "dataDrivenDisabled": true,
-                                "order": 9
-                            }
-                        }
+                        },
+                        "order": 11
                     }
                 }
             }

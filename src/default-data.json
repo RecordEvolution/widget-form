@@ -1,112 +1,74 @@
 {
-    "formTitle": "Add New Machine",
-    "styling": {
-        "headerFontSize": "16px",
-        "rowHeight": "40px"
-    },
-    "columns": [
+    "title": "Example Input Form",
+    "subTitle": "Please provide machine details",
+    "formTitle": "Add New Machine Record",
+    "formButton": false,
+    "formFields": [
         {
-            "header": "State",
-            "type": "state",
-            "showInForm": true,
-            "values": [
-                { "value": "ONLINE" },
-                { "value": "DISCONNECTED" },
-                { "value": "ONLINE" },
-                { "value": "ONLINE" },
-                { "value": "DISCONNECTED" }
-            ],
-            "styling": {
-                "stateMap": "'ONLINE', '#6e9a69', 'DISCONNECTED', '#e15656'",
-                "width": "50px"
-            }
-        },
-        {
-            "header": "Name",
-            "type": "string",
-            "showInForm": true,
-            "values": [
-                { "value": "Royal Fortune" },
-                { "value": "Mayflower" },
-                { "value": "Flying King" },
-                { "value": "Snap Dragon" },
-                { "value": "Schonerbrigg Asgard" }
-            ],
-            "styling": {
-                "width": "120px",
-                "fontSize": "16px"
-            }
-        },
-        {
-            "header": "Distance",
-            "type": "number",
-            "showInForm": true,
-            "values": [{ "value": 80 }, { "value": 20 }, { "value": 30 }, { "value": 40 }, { "value": 50 }],
-            "styling": {
-                "width": "120px",
-                "fontWeight": 100,
-                "precision": 2
-            }
-        },
-        {
-            "header": "Active",
-            "type": "boolean",
-            "showInForm": true,
-            "values": [
-                { "value": true },
-                { "value": false },
-                { "value": true },
-                { "value": true },
-                { "value": false }
-            ],
-            "styling": {
-                "width": "20px"
-            }
-        },
-        {
-            "header": "Image Link",
-            "type": "image",
-            "showInForm": false,
+            "label": "Machine Type",
+            "type": "dropdown",
+            "hiddenField": false,
+            "description": "Select machine type from list",
+            "targetColumn": "machineType",
+            "defaultValue": "pump",
             "values": [
                 {
-                    "value": "https://storage.googleapis.com/reswarm-images/mir-200.png",
-                    "link": "https://storage.googleapis.com/reswarm-images/mir-200.png"
+                    "displayLabel": "Pump",
+                    "value": "pump"
                 },
                 {
-                    "value": "https://res.cloudinary.com/dk8bhmsdz/image/upload/v1750163313/estaamic_machine_ohg3zo.png",
-                    "link": "https://res.cloudinary.com/dk8bhmsdz/image/upload/v1750163313/estaamic_machine_ohg3zo.png"
+                    "displayLabel": "Compressor",
+                    "value": "compressor"
                 },
                 {
-                    "value": "https://res.cloudinary.com/dk8bhmsdz/image/upload/v1747230889/samples/ecommerce/shoes.png",
-                    "link": "https://res.cloudinary.com/dk8bhmsdz/image/upload/v1747230889/samples/ecommerce/shoes.png"
-                },
-                {
-                    "value": "https://res.cloudinary.com/dk8bhmsdz/image/upload/v1747230897/samples/chair.png",
-                    "link": "https://res.cloudinary.com/dk8bhmsdz/image/upload/v1747230897/samples/chair.png"
-                },
-                {
-                    "value": "https://image.made-in-china.com/2f0j00iOETbDBqhRcS/Ja-1-1-Household-Sewing-Machine-for-Embroidery-and-Heavy-Fabrics.webp",
-                    "link": "https://image.made-in-china.com/2f0j00iOETbDBqhRcS/Ja-1-1-Household-Sewing-Machine-for-Embroidery-and-Heavy-Fabrics.webp"
+                    "displayLabel": "Generator",
+                    "value": "generator"
                 }
-            ],
-            "styling": {
-                "width": "120px"
-            }
+            ]
         },
         {
-            "header": "Link",
-            "type": "button",
-            "showInForm": true,
-            "values": [
-                { "value": "Google", "link": "https://google.com" },
-                { "value": "IronFlock", "link": "https://www.ironflock.com" },
-                { "value": "Haas", "link": "https://www.haascnc.com/index.html" },
-                { "value": "Siemens", "link": "https://www.siemens.com/" },
-                { "value": "Continental", "link": "https://www.continental.com/" }
-            ],
-            "styling": {
-                "width": "120px"
-            }
+            "label": "Machine Name",
+            "type": "textfield",
+            "hiddenField": false,
+            "description": "Enter the name of the machine",
+            "targetColumn": "name",
+            "validation": "^[a-zA-Z0-9 ]{3,50}$",
+            "defaultValue": "Pump A1",
+            "required": true
+        },
+        {
+            "label": "Operating Temperature",
+            "type": "numberfield",
+            "hiddenField": false,
+            "min": 0,
+            "max": 100,
+            "description": "Current operating temperature in °C",
+            "targetColumn": "temperature",
+            "defaultValue": "68.5"
+        },
+        {
+            "label": "Active",
+            "type": "checkbox",
+            "hiddenField": false,
+            "description": "Check if the machine is active",
+            "targetColumn": "isActive",
+            "defaultValue": "true"
+        },
+        {
+            "label": "Description",
+            "type": "textarea",
+            "hiddenField": false,
+            "description": "Provide additional notes or comments",
+            "targetColumn": "description",
+            "defaultValue": "No issues reported."
+        },
+        {
+            "label": "Last Maintenance",
+            "type": "datetime",
+            "hiddenField": false,
+            "description": "Date and time of the last maintenance",
+            "targetColumn": "lastMaintenance",
+            "defaultValue": "2025-07-07T08:30:00Z"
         }
     ]
 }

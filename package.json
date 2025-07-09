@@ -6,6 +6,7 @@
     "version": "1.0.1",
     "type": "module",
     "main": "dist/widget-tableedit.js",
+    "module": "dist/widget-tableedit.js",
     "types": "dist/src/widget-tableedit.d.ts",
     "files": [
         "dist",
@@ -23,7 +24,8 @@
     },
     "dependencies": {
         "@material/web": "^2.3.0",
-        "lit": "^3.3.0"
+        "lit": "^3.3.0",
+        "lit-flatpickr": "^0.4.1"
     },
     "devDependencies": {
         "@custom-elements-manifest/analyzer": "^0.10.4",
