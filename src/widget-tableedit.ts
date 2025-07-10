@@ -81,7 +81,7 @@ export class WidgetTableEdit extends LitElement {
                 table_name: field.targetColumn?.tablename,
                 column_name: field.targetColumn?.column,
                 value: this.formatValue(
-                    data[`column-${i}`] ?? field.defaultValue ?? '',
+                    data[`column-${i}`] || field.defaultValue || '',
                     field.type ?? 'textfield'
                 )
             }
