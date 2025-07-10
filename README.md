@@ -1,21 +1,21 @@
-# \<widget-tableedit>
+# \<widget-form>
 
 This webcomponent follows the [open-wc](https://github.com/open-wc/open-wc) recommendation.
 
 ## Installation
 
 ```bash
-npm i widget-tableedit
+npm i widget-form
 ```
 
 ## Usage
 
 ```html
 <script type="module">
-    import 'widget-tableedit/widget-tableedit.js'
+    import 'widget-form/widget-form.js'
 </script>
 
-<widget-tableedit></widget-tableedit>
+<widget-form></widget-form>
 ```
 
 ## Expected data format

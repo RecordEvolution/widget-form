@@ -50,8 +50,8 @@
             import { render } from 'lit'
             import { html, unsafeStatic } from 'lit/static-html.js'
             const packageJson = await fetch('../package.json').then((res) => res.json())
-            const tag = unsafeStatic(`widget-tableedit-${packageJson.version}`)
-            import '../dist/widget-tableedit.js'
+            const tag = unsafeStatic(`widget-form-${packageJson.version}`)
+            import '../dist/widget-form.js'
             const data = await fetch('../src/default-data.json').then((res) => res.json())
             const themeObject = await fetch('themes/vintage.json').then((res) => res.json())
             const theme = { theme_name: 'vintage', theme_object: themeObject }

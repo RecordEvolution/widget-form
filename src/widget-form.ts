@@ -23,7 +23,7 @@ type Theme = {
     theme_name: string
     theme_object: any
 }
-@customElement('widget-tableedit-versionplaceholder')
+@customElement('widget-form-versionplaceholder')
 export class WidgetTableEdit extends LitElement {
     @property({ type: Object })
     inputData?: InputData

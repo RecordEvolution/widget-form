@@ -18,7 +18,7 @@ export type FieldType = "dropdown" | "textfield" | "numberfield" | "checkbox" | 
  */
 export type HiddenField = boolean;
 /**
- * This field must be filled out before the form can be submitted.
+ * This field must be filled out before the form can be submitted. Ignored when a default value is provided.
  */
 export type Required = boolean;
 /**

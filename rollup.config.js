@@ -9,7 +9,7 @@ const npmPackage = JSON.parse(readFileSync('./package.json'))
 export default {
     // if you use createSpaConfig, you can use your index.html as entrypoint,
     // any <script type="module"> inside will be bundled by rollup
-    input: './src/widget-tableedit.ts',
+    input: './src/widget-form.ts',
     output: {
         dir: './dist',
         sourcemap: true,
