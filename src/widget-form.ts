@@ -348,7 +348,6 @@ export class WidgetForm extends LitElement {
         .header {
             display: flex;
             align-items: center;
-            padding: 16px;
             --md-fab-icon-color: white;
             --md-fab-container-color: #007bff;
             --md-fab-label-text-color: white;
@@ -362,8 +361,8 @@ export class WidgetForm extends LitElement {
                     ? html`
                           <md-fab
                               aria-label="Add"
-                              style="--md-fab-container-color: ${this.theme?.theme_object?.color[0] ??
-                              '#9064f7'}"
+                              style="margin-left: 16px; --md-fab-container-color: ${this.theme?.theme_object
+                                  ?.color[0] ?? '#9064f7'}"
                               @click=${this.openFormDialog}
                           >
                               <md-icon slot="icon">add</md-icon>
