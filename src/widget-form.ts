@@ -24,7 +24,7 @@ type Theme = {
     theme_object: any
 }
 @customElement('widget-form-versionplaceholder')
-export class WidgetTableEdit extends LitElement {
+export class WidgetForm extends LitElement {
     @property({ type: Object })
     inputData?: InputData
 
@@ -230,6 +230,10 @@ export class WidgetTableEdit extends LitElement {
         `
     }
 
+    cancelEdit(event: Event) {
+        this.dialogOpen = false
+    }
+
     static styles = css`
         :host {
             display: flex;
@@ -340,21 +344,44 @@ export class WidgetTableEdit extends LitElement {
         lit-flatpickr {
             z-index: 1000;
         }
+
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            --md-fab-icon-color: white;
+            --md-fab-container-color: #007bff;
+            --md-fab-label-text-color: white;
+        }
     `
 
     render() {
         return html`
-            <header>
-                <h3 class="paging" ?active=${this.inputData?.title}>${this.inputData?.title}</h3>
-                <p class="paging" ?active=${this.inputData?.subTitle}>${this.inputData?.subTitle}</p>
-            </header>
+            <div class="header">
+                ${this.inputData?.formButton
+                    ? html`
+                          <md-fab
+                              aria-label="Add"
+                              style="--md-fab-container-color: ${this.theme?.theme_object?.color[0] ??
+                              '#9064f7'}"
+                              @click=${this.openFormDialog}
+                          >
+                              <md-icon slot="icon">add</md-icon>
+                          </md-fab>
+                      `
+                    : nothing}
+                <header>
+                    <h3 class="paging" ?active=${this.inputData?.title}>${this.inputData?.title}</h3>
+                    <p class="paging" ?active=${this.inputData?.subTitle}>${this.inputData?.subTitle}</p>
+                </header>
+            </div>
             ${!this.inputData?.formButton
                 ? html`
                       <div class="wrapper">
                           ${this.renderForm()}
                           <div class="form-actions">
-                              <md-outlined-button form="form" value="cancel" type="button"
-                                  >Cancel</md-outlined-button
+                              <md-outlined-button form="form" value="cancel" type="reset"
+                                  >Reset</md-outlined-button
                               >
                               <md-filled-button form="form" value="submit" type="submit" autofocus
                                   >Submit</md-filled-button
@@ -363,15 +390,6 @@ export class WidgetTableEdit extends LitElement {
                       </div>
                   `
                 : html`
-                      <md-fab
-                          aria-label="Add"
-                          class="edit-fab"
-                          style="--md-fab-container-color: ${this.theme?.theme_object?.color[0] ?? '#9064f7'}"
-                          @click=${this.openFormDialog}
-                      >
-                          <md-icon slot="icon">add</md-icon>
-                      </md-fab>
-
                       <md-dialog
                           aria-label="${this.inputData?.title ?? 'Data Entry'}"
                           class="form"
@@ -388,11 +406,7 @@ export class WidgetTableEdit extends LitElement {
                           <div slot="headline">${this.inputData?.title ?? 'Data Entry'}</div>
                           ${this.renderForm()}
                           <div slot="actions">
-                              <md-outlined-button
-                                  form="form"
-                                  value="cancel"
-                                  type="button"
-                                  @click=${() => this.dialog?.close()}
+                              <md-outlined-button form="form" value="cancel" type="reset"
                                   >Cancel</md-outlined-button
                               >
                               <md-filled-button form="form" value="submit" type="submit" autofocus
@@ -412,6 +426,7 @@ export class WidgetTableEdit extends LitElement {
                 method="dialog"
                 class="form-content"
                 @submit=${this.handleFormSubmit}
+                @reset=${this.cancelEdit}
             >
                 ${repeat(
                     this.inputData?.formFields?.filter((field) => !field.hiddenField) ?? [],
