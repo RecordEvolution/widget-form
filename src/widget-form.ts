@@ -72,9 +72,6 @@ export class WidgetForm extends LitElement {
         const formData = new FormData(form)
         const data = Object.fromEntries((formData as any).entries())
 
-        for (const field of this.inputData?.formFields ?? []) {
-        }
-
         const submitData = this.inputData?.formFields?.map((field, i) => {
             return {
                 swarm_app_databackend_key: field.targetColumn?.swarm_app_databackend_key,
@@ -87,7 +84,7 @@ export class WidgetForm extends LitElement {
             }
         })
         this.dispatchEvent(
-            new CustomEvent('action-submit', {
+            new CustomEvent('data-submit', {
                 detail: submitData,
                 bubbles: false,
                 composed: false
