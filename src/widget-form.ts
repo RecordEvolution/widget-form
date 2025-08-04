@@ -10,9 +10,9 @@ import '@material/web/dialog/dialog.js'
 import '@material/web/button/text-button.js'
 import '@material/web/button/outlined-button.js'
 import '@material/web/button/filled-button.js'
-import '@material/web/textfield/filled-text-field.js'
+import '@material/web/textfield/outlined-text-field.js'
 import '@material/web/checkbox/checkbox.js'
-import '@material/web/select/filled-select.js'
+import '@material/web/select/outlined-select.js'
 import '@material/web/select/select-option.js'
 // import 'lit-flatpickr'
 
@@ -107,7 +107,7 @@ export class WidgetForm extends LitElement {
 
     renderTextField(field: Column, i: number) {
         return html`
-            <md-filled-text-field
+            <md-outlined-text-field
                 .name="column-${i}"
                 .label="${field.label ?? ''}"
                 .type="${field.type === 'numberfield' ? 'number' : 'text'}"
@@ -116,13 +116,13 @@ export class WidgetForm extends LitElement {
                 supporting-text=${field.description ?? ''}
                 validation-message="${field.validationMessage ?? 'Invalid input'}"
                 ?required=${field.required && !field.defaultValue}
-            ></md-filled-text-field>
+            ></md-outlined-text-field>
         `
     }
 
     renderNumberField(field: Column, i: number) {
         return html`
-            <md-filled-text-field
+            <md-outlined-text-field
                 .name="column-${i}"
                 .label="${field.label ?? ''}"
                 style="width: 200px;"
@@ -133,7 +133,7 @@ export class WidgetForm extends LitElement {
                 max=${field.max ?? ''}
                 supporting-text=${field.description ?? ''}
                 ?required=${field.required && !field.defaultValue}
-            ></md-filled-text-field>
+            ></md-outlined-text-field>
         `
     }
 
@@ -154,7 +154,7 @@ export class WidgetForm extends LitElement {
 
     renderTextArea(field: Column, i: number) {
         return html`
-            <md-filled-text-field
+            <md-outlined-text-field
                 .name="column-${i}"
                 .label="${field.label ?? ''}"
                 type="textarea"
@@ -162,7 +162,7 @@ export class WidgetForm extends LitElement {
                 rows="3"
                 ?required=${field.required && !field.defaultValue}
                 supporting-text=${field.description ?? ''}
-            ></md-filled-text-field>
+            ></md-outlined-text-field>
         `
     }
 
@@ -170,7 +170,7 @@ export class WidgetForm extends LitElement {
         return html`
             <label class="label">
                 ${field.label}
-                <md-filled-select
+                <md-outlined-select
                     name="column-${i}"
                     supporting-text=${field.description ?? ''}
                     ?required=${field.required && !field.defaultValue}
@@ -189,7 +189,7 @@ export class WidgetForm extends LitElement {
                             `
                         }
                     )}
-                </md-filled-select>
+                </md-outlined-select>
             </label>
         `
     }
@@ -215,7 +215,7 @@ export class WidgetForm extends LitElement {
         // `
 
         return html`
-            <md-filled-text-field
+            <md-outlined-text-field
                 .name="column-${i}"
                 style="width: 200px;"
                 .label="${field.label ?? ''}"
@@ -223,7 +223,7 @@ export class WidgetForm extends LitElement {
                 .value="${field.defaultValue ?? ''}"
                 supporting-text=${field.description ?? ''}
                 ?required=${field.required && !field.defaultValue}
-            ></md-filled-text-field>
+            ></md-outlined-text-field>
         `
     }
 
@@ -330,7 +330,7 @@ export class WidgetForm extends LitElement {
             flex-direction: column;
         }
 
-        md-filled-select {
+        md-outlined-select {
             flex: 1;
         }
 
