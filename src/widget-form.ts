@@ -37,7 +37,7 @@ export class WidgetForm extends LitElement {
 
     @state() dialogOpen: boolean = false
 
-    @query('md-dialog') dialog!: MdDialog
+    @query('mdif1-dialog') dialog!: MdDialog
 
     version: string = 'versionplaceholder'
 
@@ -107,7 +107,7 @@ export class WidgetForm extends LitElement {
 
     renderTextField(field: Column, i: number) {
         return html`
-            <md-outlined-text-field
+            <mdif1-outlined-text-field
                 .name="column-${i}"
                 .label="${field.label ?? ''}"
                 .type="${field.type === 'numberfield' ? 'number' : 'text'}"
@@ -116,13 +116,13 @@ export class WidgetForm extends LitElement {
                 supporting-text=${field.description ?? ''}
                 validation-message="${field.validationMessage ?? 'Invalid input'}"
                 ?required=${field.required && !field.defaultValue}
-            ></md-outlined-text-field>
+            ></mdif1-outlined-text-field>
         `
     }
 
     renderNumberField(field: Column, i: number) {
         return html`
-            <md-outlined-text-field
+            <mdif1-outlined-text-field
                 .name="column-${i}"
                 .label="${field.label ?? ''}"
                 style="width: 200px;"
@@ -133,20 +133,20 @@ export class WidgetForm extends LitElement {
                 max=${field.max ?? ''}
                 supporting-text=${field.description ?? ''}
                 ?required=${field.required && !field.defaultValue}
-            ></md-outlined-text-field>
+            ></mdif1-outlined-text-field>
         `
     }
 
     renderCheckbox(field: Column, i: number) {
         return html`
             <div class="checkbox-container">
-                <md-checkbox
+                <mdif1-checkbox
                     name="column-${i}"
                     aria-label=${field.label ?? ''}
                     ?checked=${field.defaultValue === 'true'}
                     supporting-text=${field.description ?? ''}
                     ?required=${field.required && !field.defaultValue}
-                ></md-checkbox>
+                ></mdif1-checkbox>
                 <label class="label"> ${field.label} </label>
             </div>
         `
@@ -154,7 +154,7 @@ export class WidgetForm extends LitElement {
 
     renderTextArea(field: Column, i: number) {
         return html`
-            <md-outlined-text-field
+            <mdif1-outlined-text-field
                 .name="column-${i}"
                 .label="${field.label ?? ''}"
                 type="textarea"
@@ -162,7 +162,7 @@ export class WidgetForm extends LitElement {
                 rows="3"
                 ?required=${field.required && !field.defaultValue}
                 supporting-text=${field.description ?? ''}
-            ></md-outlined-text-field>
+            ></mdif1-outlined-text-field>
         `
     }
 
@@ -170,7 +170,7 @@ export class WidgetForm extends LitElement {
         return html`
             <label class="label">
                 ${field.label}
-                <md-outlined-select
+                <mdif1-outlined-select
                     name="column-${i}"
                     supporting-text=${field.description ?? ''}
                     ?required=${field.required && !field.defaultValue}
@@ -180,16 +180,16 @@ export class WidgetForm extends LitElement {
                         (val) => val.value,
                         (val) => {
                             return html`
-                                <md-select-option
+                                <mdif1-select-option
                                     .value="${val.value ?? ''}"
                                     ?selected="${val.value === field.defaultValue}"
                                 >
                                     ${val.displayLabel}
-                                </md-select-option>
+                                </mdif1-select-option>
                             `
                         }
                     )}
-                </md-outlined-select>
+                </mdif1-outlined-select>
             </label>
         `
     }
@@ -215,7 +215,7 @@ export class WidgetForm extends LitElement {
         // `
 
         return html`
-            <md-outlined-text-field
+            <mdif1-outlined-text-field
                 .name="column-${i}"
                 style="width: 200px;"
                 .label="${field.label ?? ''}"
@@ -223,7 +223,7 @@ export class WidgetForm extends LitElement {
                 .value="${field.defaultValue ?? ''}"
                 supporting-text=${field.description ?? ''}
                 ?required=${field.required && !field.defaultValue}
-            ></md-outlined-text-field>
+            ></mdif1-outlined-text-field>
         `
     }
 
@@ -242,9 +242,9 @@ export class WidgetForm extends LitElement {
         }
 
         .edit-fab {
-            --md-fab-icon-color: white;
-            --md-fab-container-color: #007bff;
-            --md-fab-label-text-color: white;
+            --mdif1-fab-icon-color: white;
+            --mdif1-fab-container-color: #007bff;
+            --mdif1-fab-label-text-color: white;
             position: absolute;
             bottom: 24px;
             right: 24px;
@@ -330,11 +330,11 @@ export class WidgetForm extends LitElement {
             flex-direction: column;
         }
 
-        md-outlined-select {
+        mdif1-outlined-select {
             flex: 1;
         }
 
-        md-dialog {
+        mdif1-dialog {
             overflow: visible;
         }
 
@@ -345,9 +345,9 @@ export class WidgetForm extends LitElement {
         .header {
             display: flex;
             align-items: center;
-            --md-fab-icon-color: white;
-            --md-fab-container-color: #007bff;
-            --md-fab-label-text-color: white;
+            --mdif1-fab-icon-color: white;
+            --mdif1-fab-container-color: #007bff;
+            --mdif1-fab-label-text-color: white;
         }
     `
 
@@ -356,14 +356,14 @@ export class WidgetForm extends LitElement {
             <div class="header">
                 ${this.inputData?.formButton
                     ? html`
-                          <md-fab
+                          <mdif1-fab
                               aria-label="Add"
-                              style="margin-left: 16px; --md-fab-container-color: ${this.theme?.theme_object
-                                  ?.color[0] ?? '#9064f7'}"
+                              style="margin-left: 16px; --mdif1-fab-container-color: ${this.theme
+                                  ?.theme_object?.color[0] ?? '#9064f7'}"
                               @click=${this.openFormDialog}
                           >
-                              <md-icon slot="icon">add</md-icon>
-                          </md-fab>
+                              <mdif1-icon slot="icon">add</mdif1-icon>
+                          </mdif1-fab>
                       `
                     : nothing}
                 <header>
@@ -376,17 +376,17 @@ export class WidgetForm extends LitElement {
                       <div class="wrapper">
                           ${this.renderForm()}
                           <div class="form-actions">
-                              <md-outlined-button form="form" value="cancel" type="reset"
-                                  >Reset</md-outlined-button
+                              <mdif1-outlined-button form="form" value="cancel" type="reset"
+                                  >Reset</mdif1-outlined-button
                               >
-                              <md-filled-button form="form" value="submit" type="submit" autofocus
-                                  >Submit</md-filled-button
+                              <mdif1-filled-button form="form" value="submit" type="submit" autofocus
+                                  >Submit</mdif1-filled-button
                               >
                           </div>
                       </div>
                   `
                 : html`
-                      <md-dialog
+                      <mdif1-dialog
                           aria-label="${this.inputData?.title ?? 'Data Entry'}"
                           class="form"
                           quick
@@ -402,14 +402,14 @@ export class WidgetForm extends LitElement {
                           <div slot="headline">${this.inputData?.title ?? 'Data Entry'}</div>
                           ${this.renderForm()}
                           <div slot="actions">
-                              <md-outlined-button form="form" value="cancel" type="reset"
-                                  >Cancel</md-outlined-button
+                              <mdif1-outlined-button form="form" value="cancel" type="reset"
+                                  >Cancel</mdif1-outlined-button
                               >
-                              <md-filled-button form="form" value="submit" type="submit" autofocus
-                                  >Submit</md-filled-button
+                              <mdif1-filled-button form="form" value="submit" type="submit" autofocus
+                                  >Submit</mdif1-filled-button
                               >
                           </div>
-                      </md-dialog>
+                      </mdif1-dialog>
                   `}
         `
     }
