@@ -3,7 +3,7 @@
     "description": "REWidget widget-form",
     "license": "MIT",
     "author": "widget-form",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "type": "module",
     "main": "dist/widget-form.js",
     "module": "dist/widget-form.js",
