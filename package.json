@@ -10,7 +10,8 @@
     "types": "dist/src/widget-form.d.ts",
     "files": [
         "dist",
-        "src"
+        "src",
+        "thumbnail.png"
     ],
     "scripts": {
         "analyze": "cem analyze --litelement",
