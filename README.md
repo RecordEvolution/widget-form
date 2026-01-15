@@ -1,108 +1,100 @@
-# \<widget-form>
+# widget-form
 
-This webcomponent follows the [open-wc](https://github.com/open-wc/open-wc) recommendation.
+A Lit 3.x web component for creating dynamic forms with configurable fields. Part of the IronFlock widget ecosystem.
+
+![screenshot](thumbnail.png)
 
 ## Installation
 
 ```bash
-npm i widget-form
+npm i @record-evolution/widget-form
 ```
 
 ## Usage
 
 ```html
 <script type="module">
-    import 'widget-form/widget-form.js'
+    import '@record-evolution/widget-form'
 </script>
 
-<widget-form></widget-form>
+<widget-form-1.0.9></widget-form-1.0.9>
 ```
 
-## Expected data format
+> **Note:** The version number is part of the custom element tag name.
 
-The following format represents the available data :
+## Properties
 
-```js
-data: {
-  settings: {
-    title: string,
-    subTitle: string,
-    minGauge: number,
-    maxGauge: number,
-    style: {
-      needleColor: string,
-      sections: number,
-      backgroundColor: string[]
-    }
-  }
-  gaugeValue: Number
-}
-```
+| Property    | Type        | Description                   |
+| ----------- | ----------- | ----------------------------- |
+| `inputData` | `InputData` | Form configuration and fields |
+| `theme`     | `Theme`     | Theme object for styling      |
 
-## Interfaces
+## Events
+
+| Event         | Detail                        | Description                      |
+| ------------- | ----------------------------- | -------------------------------- |
+| `data-submit` | Array of field/value mappings | Fired when the form is submitted |
+
+## Configuration
+
+The form is configured via the `inputData` property:
 
 ```ts
 interface InputData {
-    settings: Settings
-    gaugeValue: number
+    title?: string
+    subTitle?: string
+    formButton?: boolean // Show button to open form dialog
+    formFields?: FormField[]
 }
 ```
+
+### Field Types
+
+Each form field supports the following types:
+
+| Type          | Description                    |
+| ------------- | ------------------------------ |
+| `textfield`   | Single-line text input         |
+| `numberfield` | Numeric input with min/max     |
+| `checkbox`    | Boolean checkbox               |
+| `textarea`    | Multi-line text input          |
+| `dropdown`    | Select from predefined options |
+| `datetime`    | Date/time picker               |
+
+### Field Configuration
 
 ```ts
-interface Settings {
-    title: string
-    subTitle: string
-    minGauge: number
-    maxGauge: number
-    style: Style
+interface FormField {
+    label: string
+    type: 'dropdown' | 'textfield' | 'numberfield' | 'checkbox' | 'textarea' | 'datetime'
+    hiddenField?: boolean // Hide field but still submit value
+    required?: boolean // Field must be filled
+    description?: string // Hint text shown below field
+    targetColumn?: TargetColumn // Database column mapping
+    defaultValue?: string
+    min?: number // For numberfield
+    max?: number // For numberfield
+    validation?: string // Regex for textfield
+    values?: DropdownValue[] // For dropdown type
 }
 ```
 
-```ts
-interface Style {
-    needleColor: string
-    sections: number
-    backgroundColor: string[]
-}
-```
-
-## Style options
-
-The following options are available for styling the value graph.
-The `sections` option splits the value area into by default three same sized sections. Therefore three different colors can be provided to the `backgroundColor` by default.
-
-```
-  interface Style {
-    needleColor: string,
-    sections: number,
-    backgroundColor: string[]
-  }
-```
-
-## Linting and formatting
-
-To scan the project for linting and formatting errors, run
+## Development
 
 ```bash
-npm run lint
+# Start dev server
+npm run start
+
+# Build for production
+npm run build
+
+# Generate types from schema
+npm run types
+
+# Build, bump version, and publish
+npm run release
 ```
 
-To automatically fix linting and formatting errors, run
+## License
 
-```bash
-npm run format
-```
-
-## Tooling configs
-
-For most of the tools, the configuration is in the `package.json` to reduce the amount of files in your project.
-
-If you customize the configuration a lot, you can consider moving them to individual files.
-
-## Local Demo with `web-dev-server`
-
-```bash
-npm start
-```
-
-To run a local development server that serves the basic demo located in `demo/index.html`
+MIT

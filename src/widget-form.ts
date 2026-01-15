@@ -14,7 +14,6 @@ import '@material/web/textfield/outlined-text-field.js'
 import '@material/web/checkbox/checkbox.js'
 import '@material/web/select/outlined-select.js'
 import '@material/web/select/select-option.js'
-// import 'lit-flatpickr'
 
 import type { MdDialog } from '@material/web/dialog/dialog.js'
 
@@ -37,7 +36,7 @@ export class WidgetForm extends LitElement {
 
     @state() dialogOpen: boolean = false
 
-    @query('mdif1-dialog') dialog!: MdDialog
+    @query('md-dialog') dialog!: MdDialog
 
     version: string = 'versionplaceholder'
 
@@ -107,7 +106,7 @@ export class WidgetForm extends LitElement {
 
     renderTextField(field: Column, i: number) {
         return html`
-            <mdif1-outlined-text-field
+            <md-outlined-text-field
                 .name="column-${i}"
                 .label="${field.label ?? ''}"
                 .type="${field.type === 'numberfield' ? 'number' : 'text'}"
@@ -116,13 +115,13 @@ export class WidgetForm extends LitElement {
                 supporting-text=${field.description ?? ''}
                 validation-message="${field.validationMessage ?? 'Invalid input'}"
                 ?required=${field.required && !field.defaultValue}
-            ></mdif1-outlined-text-field>
+            ></md-outlined-text-field>
         `
     }
 
     renderNumberField(field: Column, i: number) {
         return html`
-            <mdif1-outlined-text-field
+            <md-outlined-text-field
                 .name="column-${i}"
                 .label="${field.label ?? ''}"
                 style="width: 200px;"
@@ -133,20 +132,20 @@ export class WidgetForm extends LitElement {
                 max=${field.max ?? ''}
                 supporting-text=${field.description ?? ''}
                 ?required=${field.required && !field.defaultValue}
-            ></mdif1-outlined-text-field>
+            ></md-outlined-text-field>
         `
     }
 
     renderCheckbox(field: Column, i: number) {
         return html`
             <div class="checkbox-container">
-                <mdif1-checkbox
+                <md-checkbox
                     name="column-${i}"
                     aria-label=${field.label ?? ''}
                     ?checked=${field.defaultValue === 'true'}
                     supporting-text=${field.description ?? ''}
                     ?required=${field.required && !field.defaultValue}
-                ></mdif1-checkbox>
+                ></md-checkbox>
                 <label class="label"> ${field.label} </label>
             </div>
         `
@@ -154,7 +153,7 @@ export class WidgetForm extends LitElement {
 
     renderTextArea(field: Column, i: number) {
         return html`
-            <mdif1-outlined-text-field
+            <md-outlined-text-field
                 .name="column-${i}"
                 .label="${field.label ?? ''}"
                 type="textarea"
@@ -162,7 +161,7 @@ export class WidgetForm extends LitElement {
                 rows="3"
                 ?required=${field.required && !field.defaultValue}
                 supporting-text=${field.description ?? ''}
-            ></mdif1-outlined-text-field>
+            ></md-outlined-text-field>
         `
     }
 
@@ -170,7 +169,7 @@ export class WidgetForm extends LitElement {
         return html`
             <label class="label">
                 ${field.label}
-                <mdif1-outlined-select
+                <md-outlined-select
                     name="column-${i}"
                     supporting-text=${field.description ?? ''}
                     ?required=${field.required && !field.defaultValue}
@@ -180,42 +179,23 @@ export class WidgetForm extends LitElement {
                         (val) => val.value,
                         (val) => {
                             return html`
-                                <mdif1-select-option
+                                <md-select-option
                                     .value="${val.value ?? ''}"
                                     ?selected="${val.value === field.defaultValue}"
                                 >
                                     ${val.displayLabel}
-                                </mdif1-select-option>
+                                </md-select-option>
                             `
                         }
                     )}
-                </mdif1-outlined-select>
+                </md-outlined-select>
             </label>
         `
     }
 
     renderDateTimeField(field: Column, i: number) {
-        // return html`
-        //     <label id="x" class="label"> ${field.label} </label>
-        //     <lit-flatpickr
-        //         .name="column-${i}"
-        //         .label="${field.label ?? ''}"
-        //         allowInput
-        //         enableTime
-        //         mode="single"
-        //         dateFormat="Y-m-d H:i:S"
-        //         altFormat="Y-m-d H:i:S"
-        //         time_24hr
-        //         .defaultDate="${field.defaultValue}"
-        //         showMonths="1"
-        //         weekNumbers
-        //     >
-        //         <input />
-        //     </lit-flatpickr>
-        // `
-
         return html`
-            <mdif1-outlined-text-field
+            <md-outlined-text-field
                 .name="column-${i}"
                 style="width: 200px;"
                 .label="${field.label ?? ''}"
@@ -223,7 +203,7 @@ export class WidgetForm extends LitElement {
                 .value="${field.defaultValue ?? ''}"
                 supporting-text=${field.description ?? ''}
                 ?required=${field.required && !field.defaultValue}
-            ></mdif1-outlined-text-field>
+            ></md-outlined-text-field>
         `
     }
 
@@ -242,9 +222,9 @@ export class WidgetForm extends LitElement {
         }
 
         .edit-fab {
-            --mdif1-fab-icon-color: white;
-            --mdif1-fab-container-color: #007bff;
-            --mdif1-fab-label-text-color: white;
+            --md-fab-icon-color: white;
+            --md-fab-container-color: #007bff;
+            --md-fab-label-text-color: white;
             position: absolute;
             bottom: 24px;
             right: 24px;
@@ -330,24 +310,20 @@ export class WidgetForm extends LitElement {
             flex-direction: column;
         }
 
-        mdif1-outlined-select {
+        md-outlined-select {
             flex: 1;
         }
 
-        mdif1-dialog {
+        md-dialog {
             overflow: visible;
-        }
-
-        lit-flatpickr {
-            z-index: 1000;
         }
 
         .header {
             display: flex;
             align-items: center;
-            --mdif1-fab-icon-color: white;
-            --mdif1-fab-container-color: #007bff;
-            --mdif1-fab-label-text-color: white;
+            --md-fab-icon-color: white;
+            --md-fab-container-color: #007bff;
+            --md-fab-label-text-color: white;
         }
     `
 
@@ -356,14 +332,14 @@ export class WidgetForm extends LitElement {
             <div class="header">
                 ${this.inputData?.formButton
                     ? html`
-                          <mdif1-fab
+                          <md-fab
                               aria-label="Add"
-                              style="margin-left: 16px; --mdif1-fab-container-color: ${this.theme
-                                  ?.theme_object?.color[0] ?? '#9064f7'}"
+                              style="margin-left: 16px; --md-fab-container-color: ${this.theme?.theme_object
+                                  ?.color[0] ?? '#9064f7'}"
                               @click=${this.openFormDialog}
                           >
-                              <mdif1-icon slot="icon">add</mdif1-icon>
-                          </mdif1-fab>
+                              <md-icon slot="icon">add</md-icon>
+                          </md-fab>
                       `
                     : nothing}
                 <header>
@@ -376,17 +352,17 @@ export class WidgetForm extends LitElement {
                       <div class="wrapper">
                           ${this.renderForm()}
                           <div class="form-actions">
-                              <mdif1-outlined-button form="form" value="cancel" type="reset"
-                                  >Reset</mdif1-outlined-button
+                              <md-outlined-button form="form" value="cancel" type="reset"
+                                  >Reset</md-outlined-button
                               >
-                              <mdif1-filled-button form="form" value="submit" type="submit" autofocus
-                                  >Submit</mdif1-filled-button
+                              <md-filled-button form="form" value="submit" type="submit" autofocus
+                                  >Submit</md-filled-button
                               >
                           </div>
                       </div>
                   `
                 : html`
-                      <mdif1-dialog
+                      <md-dialog
                           aria-label="${this.inputData?.title ?? 'Data Entry'}"
                           class="form"
                           quick
@@ -402,14 +378,14 @@ export class WidgetForm extends LitElement {
                           <div slot="headline">${this.inputData?.title ?? 'Data Entry'}</div>
                           ${this.renderForm()}
                           <div slot="actions">
-                              <mdif1-outlined-button form="form" value="cancel" type="reset"
-                                  >Cancel</mdif1-outlined-button
+                              <md-outlined-button form="form" value="cancel" type="reset"
+                                  >Cancel</md-outlined-button
                               >
-                              <mdif1-filled-button form="form" value="submit" type="submit" autofocus
-                                  >Submit</mdif1-filled-button
+                              <md-filled-button form="form" value="submit" type="submit" autofocus
+                                  >Submit</md-filled-button
                               >
                           </div>
-                      </mdif1-dialog>
+                      </md-dialog>
                   `}
         `
     }

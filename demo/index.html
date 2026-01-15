@@ -49,11 +49,12 @@
         <script type="module">
             import { render } from 'lit'
             import { html, unsafeStatic } from 'lit/static-html.js'
-            const packageJson = await fetch('../package.json').then((res) => res.json())
+            import packageJson from '../package.json'
+            import '../src/widget-form.js'
+            import data from '../src/default-data.json'
+            import themeObject from './themes/light.json'
+
             const tag = unsafeStatic(`widget-form-${packageJson.version}`)
-            import '../dist/widget-form.js'
-            const data = await fetch('../src/default-data.json').then((res) => res.json())
-            const themeObject = await fetch('themes/light.json').then((res) => res.json())
             const theme = { theme_name: 'light', theme_object: themeObject }
             render(
                 html`

@@ -53,38 +53,38 @@ export type Value = string;
  * List of values for the dropdown field.
  */
 export type DropdownValues = {
-  displayLabel?: DisplayLabel;
-  value?: Value;
-  [k: string]: unknown;
+    displayLabel?: DisplayLabel;
+    value?: Value;
+    [k: string]: unknown;
 }[];
 /**
  * Add fields and define how they should be stored.
  */
 export type FormFields = {
-  label?: Label;
-  type?: FieldType;
-  hiddenField?: HiddenField;
-  required?: Required;
-  description?: HintText;
-  targetColumn?: TargetColumn;
-  defaultValue?: DefaultValue;
-  min?: MinimumValue;
-  max?: MaximumValue;
-  validation?: ValidationRegex;
-  values?: DropdownValues;
-  [k: string]: unknown;
+    label?: Label;
+    type?: FieldType;
+    hiddenField?: HiddenField;
+    required?: Required;
+    description?: HintText;
+    targetColumn?: TargetColumn;
+    defaultValue?: DefaultValue;
+    min?: MinimumValue;
+    max?: MaximumValue;
+    validation?: ValidationRegex;
+    values?: DropdownValues;
+    [k: string]: unknown;
 }[];
 
 export interface InputData {
-  title?: Title;
-  subTitle?: Subtitle;
-  formButton?: FormOpenButton;
-  formFields?: FormFields;
-  [k: string]: unknown;
+    title?: Title;
+    subTitle?: Subtitle;
+    formButton?: FormOpenButton;
+    formFields?: FormFields;
+    [k: string]: unknown;
 }
 /**
  * The column in the target table where this field's data will be stored. This will be combined with all other fields in this form connected with the same target table.
  */
 export interface TargetColumn {
-  [k: string]: unknown;
+    [k: string]: unknown;
 }
