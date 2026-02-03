@@ -5,52 +5,64 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
+/**
+ * The main heading displayed at the top of the form. Use to describe the form's purpose (e.g., 'Add New Device', 'Submit Feedback', 'Configuration Settings').
+ */
 export type Title = string;
+/**
+ * Secondary text displayed below the title. Use for instructions, context, or additional information about the form.
+ */
 export type Subtitle = string;
 /**
- * If checked, a button will be shown to open the form. If unchecked, the form will be shown directly.
+ * When enabled, shows a button that opens the form in a modal dialog when clicked. When disabled, the form fields are displayed directly in the widget area. Use button mode for space-constrained layouts or optional data entry.
  */
 export type FormOpenButton = boolean;
+/**
+ * The text label displayed next to this form field. Should clearly describe what data the user should enter.
+ */
 export type Label = string;
+/**
+ * The input control type: 'dropdown' for selection from predefined options, 'textfield' for single-line text, 'numberfield' for numeric values, 'checkbox' for boolean yes/no, 'textarea' for multi-line text, 'datetime' for date and time selection.
+ */
 export type FieldType = "dropdown" | "textfield" | "numberfield" | "checkbox" | "textarea" | "datetime";
 /**
- * If false, this field will be hidden in the form but still saved on submit.
+ * When enabled, this field is hidden from users but its value (typically a default or data-bound value) is still submitted with the form. Useful for including metadata, timestamps, or user IDs automatically.
  */
 export type HiddenField = boolean;
 /**
- * This field must be filled out before the form can be submitted. Ignored when a default value is provided.
+ * When enabled, users must fill out this field before the form can be submitted. The form will show a validation error if left empty. Ignored when a default value is provided.
  */
 export type Required = boolean;
 /**
- * This text will be shown as a description at the field.
+ * Helper text displayed below the field to guide users on what to enter. Use for format hints, examples, or clarifying instructions.
  */
 export type HintText = string;
 /**
- * This value will be used if the user does not provide a value.
+ * Pre-filled value for this field when the form loads. Used if the user doesn't modify the field. Can be a static value or bound to a data source.
  */
 export type DefaultValue = string;
 /**
- * Minimum value for number fields.
+ * The minimum allowed numeric value for numberfield types. Values below this will fail validation.
  */
 export type MinimumValue = number;
 /**
- * Maximum value for number fields.
+ * The maximum allowed numeric value for numberfield types. Values above this will fail validation.
  */
 export type MaximumValue = number;
 /**
- * Regular expression for validating text fields.
+ * A regular expression pattern to validate text input (e.g., '^[A-Z]{2}[0-9]{4}$' for format like 'AB1234'). Leave empty to accept any text.
  */
 export type ValidationRegex = string;
 /**
- * Label shown in the dropdown.
+ * The text shown to users in the dropdown list.
  */
 export type DisplayLabel = string;
 /**
- * Value stored in the database.
+ * The actual value stored in the database when this option is selected. May differ from the display label.
  */
 export type Value = string;
 /**
- * List of values for the dropdown field.
+ * The list of selectable options for dropdown field types. Each option has a display label and a stored value.
  */
 export type DropdownValues = {
     displayLabel?: DisplayLabel;
@@ -58,7 +70,7 @@ export type DropdownValues = {
     [k: string]: unknown;
 }[];
 /**
- * Add fields and define how they should be stored.
+ * Array of input fields that make up the form. Each field defines its type, validation rules, and target database column for storage. Fields are rendered in the order specified.
  */
 export type FormFields = {
     label?: Label;
@@ -75,6 +87,9 @@ export type FormFields = {
     [k: string]: unknown;
 }[];
 
+/**
+ * A form widget for collecting user input and storing it in database tables. Use this widget to create data entry interfaces for manual input, configuration settings, user feedback, or any scenario requiring structured data collection. Supports various field types including text, numbers, dropdowns, checkboxes, textareas, and datetime pickers. Each field maps to a database column, enabling direct data persistence. Can display as a button-triggered modal or inline form.
+ */
 export interface InputData {
     title?: Title;
     subTitle?: Subtitle;
@@ -83,7 +98,7 @@ export interface InputData {
     [k: string]: unknown;
 }
 /**
- * The column in the target table where this field's data will be stored. This will be combined with all other fields in this form connected with the same target table.
+ * The database table and column where this field's value will be stored on form submission. Select from available tables and columns. All fields targeting the same table will be combined into a single row insert.
  */
 export interface TargetColumn {
     [k: string]: unknown;
