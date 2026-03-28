@@ -67,6 +67,9 @@ export class WidgetForm extends LitElement {
 
     handleFormSubmit(event: Event) {
         event.preventDefault()
+        const submitter = (event as SubmitEvent).submitter as HTMLElement
+        const action = submitter?.getAttribute('value') ?? 'submit'
+
         const form = event.target as HTMLFormElement
         const formData = new FormData(form)
         const data = Object.fromEntries((formData as any).entries())
@@ -82,6 +85,15 @@ export class WidgetForm extends LitElement {
                 )
             }
         })
+
+        if (this.inputData?.deleteFlagColumn)
+            submitData?.push({
+                swarm_app_databackend_key: this.inputData?.deleteFlagColumn?.swarm_app_databackend_key,
+                table_name: this.inputData?.deleteFlagColumn?.tablename,
+                column_name: this.inputData?.deleteFlagColumn?.column,
+                value: action === 'delete'
+            })
+
         this.dispatchEvent(
             new CustomEvent('data-submit', {
                 detail: submitData,
@@ -110,6 +122,7 @@ export class WidgetForm extends LitElement {
                 .name="column-${i}"
                 .label="${field.label ?? ''}"
                 .type="${field.type === 'numberfield' ? 'number' : 'text'}"
+                .value="${field.preFilledValue ?? ''}"
                 .placeholder="${field.defaultValue ?? ''}"
                 .pattern="${field.validation ?? ''}"
                 supporting-text=${field.description ?? ''}
@@ -126,6 +139,7 @@ export class WidgetForm extends LitElement {
                 .label="${field.label ?? ''}"
                 style="width: 200px;"
                 type="number"
+                .value="${field.preFilledValue ?? ''}"
                 .placeholder="${field.defaultValue ?? ''}"
                 step="any"
                 min=${field.min ?? ''}
@@ -142,7 +156,7 @@ export class WidgetForm extends LitElement {
                 <md-checkbox
                     name="column-${i}"
                     aria-label=${field.label ?? ''}
-                    ?checked=${field.defaultValue === 'true'}
+                    ?checked=${(String(field.preFilledValue) ?? field.defaultValue) === 'true'}
                     supporting-text=${field.description ?? ''}
                     ?required=${field.required && !field.defaultValue}
                 ></md-checkbox>
@@ -157,6 +171,7 @@ export class WidgetForm extends LitElement {
                 .name="column-${i}"
                 .label="${field.label ?? ''}"
                 type="textarea"
+                .value="${field.preFilledValue ?? ''}"
                 .placeholder="${field.defaultValue ?? ''}"
                 rows="3"
                 ?required=${field.required && !field.defaultValue}
@@ -181,7 +196,7 @@ export class WidgetForm extends LitElement {
                             return html`
                                 <md-select-option
                                     .value="${val.value ?? ''}"
-                                    ?selected="${val.value === field.defaultValue}"
+                                    ?selected="${val.value === (field.preFilledValue ?? field.defaultValue)}"
                                 >
                                     ${val.displayLabel}
                                 </md-select-option>
@@ -200,14 +215,33 @@ export class WidgetForm extends LitElement {
                 style="width: 200px;"
                 .label="${field.label ?? ''}"
                 type="datetime-local"
-                .value="${field.defaultValue ?? ''}"
+                .value="${field.preFilledValue ?? field.defaultValue ?? ''}"
                 supporting-text=${field.description ?? ''}
                 ?required=${field.required && !field.defaultValue}
             ></md-outlined-text-field>
         `
     }
 
+    resetForm() {
+        const form = this.shadowRoot?.querySelector('#form') as HTMLFormElement
+        if (!form) return
+        this.inputData?.formFields?.forEach((field, i) => {
+            const name = `column-${i}`
+            if (field.type === 'checkbox') {
+                const cb = form.querySelector(`md-checkbox[name="${name}"]`) as any
+                if (cb) cb.checked = field.preFilledValue === 'true'
+            } else if (field.type === 'dropdown') {
+                const select = form.querySelector(`md-outlined-select[name="${name}"]`) as any
+                if (select) select.value = field.preFilledValue ?? ''
+            } else {
+                const input = form.querySelector(`md-outlined-text-field[name="${name}"]`) as any
+                if (input) input.value = field.preFilledValue ?? ''
+            }
+        })
+    }
+
     cancelEdit(event: Event) {
+        this.resetForm()
         this.dialogOpen = false
     }
 
@@ -325,10 +359,37 @@ export class WidgetForm extends LitElement {
             --md-fab-container-color: #007bff;
             --md-fab-label-text-color: white;
         }
+
+        .delete-btn {
+            --md-filled-button-container-color: #d32f2f;
+            --md-filled-button-label-text-color: #fff;
+            --md-filled-button-hover-label-text-color: #fff;
+            --md-filled-button-focus-label-text-color: #fff;
+            --md-filled-button-pressed-label-text-color: #fff;
+        }
     `
 
     render() {
+        const fontColor = this.themeTitleColor
+        const bgColor = this.themeBgColor
+        const bgColorOpaque = bgColor?.startsWith('rgba')
+            ? bgColor.replace(/rgba\(([^)]+),\s*[\d.]+\)/, 'rgb($1)')
+            : bgColor?.startsWith('#') && bgColor.length === 9
+              ? bgColor.substring(0, 7)
+              : bgColor
         return html`
+            <style>
+                :host {
+                    --md-sys-color-on-surface: ${fontColor};
+                    --md-sys-color-on-surface-variant: ${fontColor};
+                    --md-sys-color-outline: ${fontColor};
+                    --md-sys-color-surface-container: ${bgColorOpaque};
+                    --md-menu-container-color: ${bgColorOpaque};
+                    --md-menu-item-selected-container-color: ${bgColorOpaque};
+                    --md-menu-item-selected-label-text-color: ${fontColor};
+                    color: ${fontColor};
+                }
+            </style>
             <div class="header">
                 ${this.inputData?.formButton
                     ? html`
@@ -352,9 +413,17 @@ export class WidgetForm extends LitElement {
                       <div class="wrapper">
                           ${this.renderForm()}
                           <div class="form-actions">
-                              <md-outlined-button form="form" value="cancel" type="reset"
-                                  >Reset</md-outlined-button
-                              >
+                              ${this.inputData?.deleteButton
+                                  ? html`<md-filled-button
+                                        class="delete-btn"
+                                        form="form"
+                                        value="delete"
+                                        type="submit"
+                                        autofocus
+                                        >Delete</md-filled-button
+                                    >`
+                                  : nothing}
+                              <md-outlined-button @click=${this.resetForm}>Reset</md-outlined-button>
                               <md-filled-button form="form" value="submit" type="submit" autofocus
                                   >Submit</md-filled-button
                               >
@@ -378,9 +447,17 @@ export class WidgetForm extends LitElement {
                           <div slot="headline">${this.inputData?.title ?? 'Data Entry'}</div>
                           ${this.renderForm()}
                           <div slot="actions">
-                              <md-outlined-button form="form" value="cancel" type="reset"
-                                  >Cancel</md-outlined-button
-                              >
+                              ${this.inputData?.deleteButton
+                                  ? html`<md-filled-button
+                                        class="delete-btn"
+                                        form="form"
+                                        value="delete"
+                                        type="submit"
+                                        autofocus
+                                        >Delete</md-filled-button
+                                    >`
+                                  : nothing}
+                              <md-outlined-button @click=${this.cancelEdit}>Cancel</md-outlined-button>
                               <md-filled-button form="form" value="submit" type="submit" autofocus
                                   >Submit</md-filled-button
                               >
@@ -398,7 +475,6 @@ export class WidgetForm extends LitElement {
                 method="dialog"
                 class="form-content"
                 @submit=${this.handleFormSubmit}
-                @reset=${this.cancelEdit}
             >
                 ${repeat(
                     this.inputData?.formFields?.filter((field) => !field.hiddenField) ?? [],

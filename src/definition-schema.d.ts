@@ -18,6 +18,10 @@ export type Subtitle = string;
  */
 export type FormOpenButton = boolean;
 /**
+ * When enabled, shows a delete button that allows users to remove existing entries.
+ */
+export type ShowDeleteButton = boolean;
+/**
  * The text label displayed next to this form field. Should clearly describe what data the user should enter.
  */
 export type Label = string;
@@ -38,7 +42,11 @@ export type Required = boolean;
  */
 export type HintText = string;
 /**
- * Pre-filled value for this field when the form loads. Used if the user doesn't modify the field. Can be a static value or bound to a data source.
+ * Pre-filled value for this field when the form loads. Can be a static value or bound to a data source.
+ */
+export type PreFilledValue = string;
+/**
+ * Default value for this field when the form loads. If the user does not provide a value, this default will be used. Can be a static value or bound to a data source.
  */
 export type DefaultValue = string;
 /**
@@ -79,6 +87,7 @@ export type FormFields = {
     required?: Required;
     description?: HintText;
     targetColumn?: TargetColumn;
+    preFilledValue?: PreFilledValue;
     defaultValue?: DefaultValue;
     min?: MinimumValue;
     max?: MaximumValue;
@@ -94,7 +103,15 @@ export interface InputData {
     title?: Title;
     subTitle?: Subtitle;
     formButton?: FormOpenButton;
+    deleteButton?: ShowDeleteButton;
+    deleteFlagColumn?: DeleteFlagColumn;
     formFields?: FormFields;
+    [k: string]: unknown;
+}
+/**
+ * The database column used to mark records as deleted when the delete button is clicked. This MUST be a boolean column that indicates whether a record is active or deleted.
+ */
+export interface DeleteFlagColumn {
     [k: string]: unknown;
 }
 /**

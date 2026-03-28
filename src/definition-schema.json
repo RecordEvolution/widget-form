@@ -17,18 +17,32 @@
             "dataDrivenDisabled": true,
             "type": "string"
         },
+        "deleteFlagColumn": {
+            "title": "Delete-Flag Column",
+            "description": "The target table column used to mark records as deleted when the delete button is clicked. This MUST be a boolean column. If the target table has such a deleted_flag column, it should be specified here regardless of the delete button setting.",
+            "dataDrivenDisabled": true,
+            "type": "targetColumn",
+            "order": 3
+        },
+        "deleteButton": {
+            "title": "Show Delete Button",
+            "description": "When enabled, shows a delete button that allows users to remove existing entries.",
+            "dataDrivenDisabled": true,
+            "type": "boolean",
+            "order": 4
+        },
         "formButton": {
             "title": "Form Open Button",
             "description": "When enabled, shows a button that opens the form in a modal dialog when clicked. When disabled, the form fields are displayed directly in the widget area. Use button mode for space-constrained layouts or optional data entry.",
             "dataDrivenDisabled": true,
             "type": "boolean",
-            "order": 3
+            "order": 5
         },
         "formFields": {
             "title": "Form Fields",
             "description": "Array of input fields that make up the form. Each field defines its type, validation rules, and target database column for storage. Fields are rendered in the order specified.",
             "type": "array",
-            "order": 4,
+            "order": 6,
             "dataDrivenDisabled": true,
             "items": {
                 "type": "object",
@@ -79,12 +93,17 @@
                         "required": true,
                         "order": 6
                     },
+                    "preFilledValue": {
+                        "title": "Pre-filled Value",
+                        "description": "Pre-filled value for this field when the form loads. Can be a static value or bound to a data source.",
+                        "type": "string",
+                        "order": 7
+                    },
                     "defaultValue": {
                         "title": "Default Value",
-                        "description": "Pre-filled value for this field when the form loads. Used if the user doesn't modify the field. Can be a static value or bound to a data source.",
+                        "description": "Default value for this field when the form loads. If the user does not provide a value, this default will be used. Can be a static value or bound to a data source.",
                         "type": "string",
-                        "order": 7,
-                        "dataDrivenDisabled": true
+                        "order": 8
                     },
                     "min": {
                         "title": "Minimum Value",
@@ -95,7 +114,7 @@
                             "relativePath": "../type",
                             "showIfValueIn": ["numberfield"]
                         },
-                        "order": 8
+                        "order": 9
                     },
                     "max": {
                         "title": "Maximum Value",
@@ -106,7 +125,7 @@
                             "relativePath": "../type",
                             "showIfValueIn": ["numberfield"]
                         },
-                        "order": 9
+                        "order": 10
                     },
                     "validation": {
                         "title": "Validation Regex",
@@ -117,7 +136,7 @@
                             "relativePath": "../type",
                             "showIfValueIn": ["textfield"]
                         },
-                        "order": 10
+                        "order": 11
                     },
                     "values": {
                         "title": "Dropdown Values",
@@ -146,7 +165,7 @@
                                 }
                             }
                         },
-                        "order": 11
+                        "order": 12
                     }
                 }
             }
