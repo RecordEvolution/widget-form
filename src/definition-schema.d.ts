@@ -14,13 +14,13 @@ export type Title = string;
  */
 export type Subtitle = string;
 /**
- * When enabled, shows a button that opens the form in a modal dialog when clicked. When disabled, the form fields are displayed directly in the widget area. Use button mode for space-constrained layouts or optional data entry.
- */
-export type FormOpenButton = boolean;
-/**
  * When enabled, shows a delete button that allows users to remove existing entries.
  */
 export type ShowDeleteButton = boolean;
+/**
+ * When enabled, shows a button that opens the form in a modal dialog when clicked. When disabled, the form fields are displayed directly in the widget area. Use button mode for space-constrained layouts or optional data entry.
+ */
+export type FormOpenButton = boolean;
 /**
  * The text label displayed next to this form field. Should clearly describe what data the user should enter.
  */
@@ -102,14 +102,14 @@ export type FormFields = {
 export interface InputData {
     title?: Title;
     subTitle?: Subtitle;
-    formButton?: FormOpenButton;
-    deleteButton?: ShowDeleteButton;
     deleteFlagColumn?: DeleteFlagColumn;
+    deleteButton?: ShowDeleteButton;
+    formButton?: FormOpenButton;
     formFields?: FormFields;
     [k: string]: unknown;
 }
 /**
- * The database column used to mark records as deleted when the delete button is clicked. This MUST be a boolean column that indicates whether a record is active or deleted.
+ * The target table column used to mark records as deleted when the delete button is clicked. This MUST be a boolean column. If the target table has such a deleted_flag column, it should be specified here regardless of the delete button setting.
  */
 export interface DeleteFlagColumn {
     [k: string]: unknown;
