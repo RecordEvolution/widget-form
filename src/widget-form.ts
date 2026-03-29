@@ -79,9 +79,7 @@ export class WidgetForm extends LitElement {
             const name = `column-${i}`
             let rawValue: any
 
-            if (field.hiddenField) {
-                rawValue = field.preFilledValue ?? field.defaultValue ?? ''
-            } else if (field.type === 'checkbox') {
+            if (field.type === 'checkbox') {
                 rawValue = formData.has(name) ? 'on' : 'off'
             } else {
                 rawValue = formData.get(name) ?? field.defaultValue ?? ''
@@ -477,7 +475,13 @@ export class WidgetForm extends LitElement {
                         this.inputData?.formFields ?? [],
                         (field, i) => i,
                         (field, i) => {
-                            if (field.hiddenField) return nothing
+                            if (field.hiddenField) {
+                                return html`<input
+                                    type="hidden"
+                                    name="column-${i}"
+                                    .value="${field.preFilledValue ?? field.defaultValue ?? ''}"
+                                />`
+                            }
                             switch (field.type) {
                                 case 'textfield':
                                     return this.renderTextField(field, i)
