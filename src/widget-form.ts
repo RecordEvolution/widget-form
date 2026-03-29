@@ -31,6 +31,9 @@ export class WidgetForm extends LitElement {
     @property({ type: Object })
     theme?: Theme
 
+    @property({ type: String })
+    route?: string
+
     @state() private themeBgColor?: string
     @state() private themeTitleColor?: string
     @state() private themeSubtitleColor?: string
@@ -108,6 +111,23 @@ export class WidgetForm extends LitElement {
                 composed: false
             })
         )
+
+        if (action === 'delete') {
+            const deleteRoute = this.resolveRoute({
+                route: this.inputData?.deleteNavigationRoute,
+                variables: this.inputData?.variables
+            })
+            if (deleteRoute) {
+                this.dispatchEvent(
+                    new CustomEvent('nav-submit', {
+                        detail: { path: String(deleteRoute) },
+                        bubbles: true,
+                        composed: true
+                    })
+                )
+            }
+        }
+
         this.resetForm()
         this.dialogOpen = false
     }
@@ -231,6 +251,31 @@ export class WidgetForm extends LitElement {
 
     resetForm() {
         this.formKey++
+    }
+
+    resolveRoute(item?: any): string | undefined {
+        let route = String(item?.route ?? '')
+        if (!route) return undefined
+        if (item?.variables) {
+            for (const variable of item.variables) {
+                if (variable.label) {
+                    route = route
+                        .split(`{{${variable.label}}}`)
+                        .join(encodeURIComponent(String(variable.value ?? '')))
+                }
+            }
+        }
+        if (route.includes('*')) {
+            const currentSegments = (this.route || '').split('/').filter(Boolean)
+            const routeSegments = route.split('/').filter(Boolean)
+            for (let i = 0; i < routeSegments.length; i++) {
+                if (routeSegments[i] === '*') {
+                    routeSegments[i] = currentSegments[i] ?? ''
+                }
+            }
+            route = (route.startsWith('/') ? '/' : '') + routeSegments.filter(Boolean).join('/')
+        }
+        return route
     }
 
     cancelEdit(event: Event) {

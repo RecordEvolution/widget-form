@@ -14,17 +14,37 @@ export type Title = string;
  */
 export type Subtitle = string;
 /**
- * When enabled, shows a delete button that allows users to remove existing entries.
- */
-export type ShowDeleteButton = boolean;
-/**
  * When enabled, shows a button that opens the form in a modal dialog when clicked. When disabled, the form fields are displayed directly in the widget area. Use button mode for space-constrained layouts or optional data entry.
  */
 export type FormOpenButton = boolean;
 /**
- * The text label displayed next to this form field. Should clearly describe what data the user should enter.
+ * When enabled, shows a delete button that allows users to remove existing entries.
+ */
+export type ShowDeleteButton = boolean;
+/**
+ * The destination path to route to after delete. Use for navigating to a home or main page.
+ */
+export type PostDeleteNavigation = string;
+/**
+ * The variable name used in the route string. Reference this in your route using the {{label}} syntax. Use descriptive names like 'temperature', 'status', 'deviceName'.
  */
 export type Label = string;
+/**
+ * The replacement text that will appear in place of {{label}} in the rendered output. Can be a static value or bound to a data column for dynamic updates.
+ */
+export type Value = string;
+/**
+ * Array of variable definitions for dynamic route segment substitution. Each variable has a label (used in the route string as {{label}}) and a value (the replacement text). Values can be static or bound to data columns for real-time updates.
+ */
+export type PostDeleteNavigationVariables = {
+    label?: Label;
+    value?: Value;
+    [k: string]: unknown;
+}[];
+/**
+ * The text label displayed next to this form field. Should clearly describe what data the user should enter.
+ */
+export type Label1 = string;
 /**
  * The input control type: 'dropdown' for selection from predefined options, 'textfield' for single-line text, 'numberfield' for numeric values, 'checkbox' for boolean yes/no, 'textarea' for multi-line text, 'datetime' for date and time selection.
  */
@@ -68,20 +88,20 @@ export type DisplayLabel = string;
 /**
  * The actual value stored in the database when this option is selected. May differ from the display label.
  */
-export type Value = string;
+export type Value1 = string;
 /**
  * The list of selectable options for dropdown field types. Each option has a display label and a stored value.
  */
 export type DropdownValues = {
     displayLabel?: DisplayLabel;
-    value?: Value;
+    value?: Value1;
     [k: string]: unknown;
 }[];
 /**
  * Array of input fields that make up the form. Each field defines its type, validation rules, and target database column for storage. Fields are rendered in the order specified.
  */
 export type FormFields = {
-    label?: Label;
+    label?: Label1;
     type?: FieldType;
     hiddenField?: HiddenField;
     required?: Required;
@@ -102,9 +122,11 @@ export type FormFields = {
 export interface InputData {
     title?: Title;
     subTitle?: Subtitle;
-    deleteFlagColumn?: DeleteFlagColumn;
-    deleteButton?: ShowDeleteButton;
     formButton?: FormOpenButton;
+    deleteButton?: ShowDeleteButton;
+    deleteFlagColumn?: DeleteFlagColumn;
+    deleteNavigationRoute?: PostDeleteNavigation;
+    variables?: PostDeleteNavigationVariables;
     formFields?: FormFields;
     [k: string]: unknown;
 }

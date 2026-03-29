@@ -15,11 +15,11 @@
             "order": 2,
             "type": "string"
         },
-        "deleteFlagColumn": {
-            "title": "Delete-Flag Column",
-            "description": "The target table column used to mark records as deleted when the delete button is clicked. This MUST be a boolean column. If the target table has such a deleted_flag column, it should be specified here regardless of the delete button setting.",
+        "formButton": {
+            "title": "Form Open Button",
+            "description": "When enabled, shows a button that opens the form in a modal dialog when clicked. When disabled, the form fields are displayed directly in the widget area. Use button mode for space-constrained layouts or optional data entry.",
             "dataDrivenDisabled": true,
-            "type": "targetColumn",
+            "type": "boolean",
             "order": 3
         },
         "deleteButton": {
@@ -29,18 +29,61 @@
             "type": "boolean",
             "order": 4
         },
-        "formButton": {
-            "title": "Form Open Button",
-            "description": "When enabled, shows a button that opens the form in a modal dialog when clicked. When disabled, the form fields are displayed directly in the widget area. Use button mode for space-constrained layouts or optional data entry.",
+        "deleteFlagColumn": {
+            "title": "Delete-Flag Column",
+            "description": "The target table column used to mark records as deleted when the delete button is clicked. This MUST be a boolean column. If the target table has such a deleted_flag column, it should be specified here regardless of the delete button setting.",
             "dataDrivenDisabled": true,
-            "type": "boolean",
+            "condition": {
+                "relativePath": "../deleteButton",
+                "showIfValueIn": [true]
+            },
+            "type": "targetColumn",
             "order": 5
+        },
+        "deleteNavigationRoute": {
+            "title": "Post-Delete Navigation",
+            "description": "The destination path to route to after delete. Use for navigating to a home or main page.",
+            "order": 6,
+            "condition": {
+                "relativePath": "../deleteButton",
+                "showIfValueIn": [true]
+            },
+            "type": "string"
+        },
+        "variables": {
+            "title": "Post-Delete Navigation Variables",
+            "description": "Array of variable definitions for dynamic route segment substitution. Each variable has a label (used in the route string as {{label}}) and a value (the replacement text). Values can be static or bound to data columns for real-time updates.",
+            "type": "array",
+            "dataDrivenDisabled": true,
+            "condition": {
+                "relativePath": "../deleteButton",
+                "showIfValueIn": [true]
+            },
+            "order": 7,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "label": {
+                        "title": "Label",
+                        "description": "The variable name used in the route string. Reference this in your route using the {{label}} syntax. Use descriptive names like 'temperature', 'status', 'deviceName'.",
+                        "type": "string",
+                        "dataDrivenDisabled": true,
+                        "order": 1
+                    },
+                    "value": {
+                        "title": "Value",
+                        "description": "The replacement text that will appear in place of {{label}} in the rendered output. Can be a static value or bound to a data column for dynamic updates.",
+                        "type": "string",
+                        "order": 2
+                    }
+                }
+            }
         },
         "formFields": {
             "title": "Form Fields",
             "description": "Array of input fields that make up the form. Each field defines its type, validation rules, and target database column for storage. Fields are rendered in the order specified.",
             "type": "array",
-            "order": 6,
+            "order": 8,
             "dataDrivenDisabled": true,
             "items": {
                 "type": "object",
