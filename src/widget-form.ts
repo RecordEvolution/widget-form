@@ -1,5 +1,6 @@
 import { html, css, LitElement, PropertyValues, nothing } from 'lit'
 import { repeat } from 'lit/directives/repeat.js'
+import { keyed } from 'lit/directives/keyed.js'
 import { property, state, customElement, query } from 'lit/decorators.js'
 import { InputData, FormFields } from './definition-schema.js'
 
@@ -38,6 +39,8 @@ export class WidgetForm extends LitElement {
 
     @query('md-dialog') dialog!: MdDialog
 
+    @state() private formKey = 0
+
     version: string = 'versionplaceholder'
 
     update(changedProperties: Map<string, any>) {
@@ -72,17 +75,23 @@ export class WidgetForm extends LitElement {
 
         const form = event.target as HTMLFormElement
         const formData = new FormData(form)
-        const data = Object.fromEntries((formData as any).entries())
-
         const submitData = this.inputData?.formFields?.map((field, i) => {
+            const name = `column-${i}`
+            let rawValue: any
+
+            if (field.hiddenField) {
+                rawValue = field.preFilledValue ?? field.defaultValue ?? ''
+            } else if (field.type === 'checkbox') {
+                rawValue = formData.has(name) ? 'on' : 'off'
+            } else {
+                rawValue = formData.get(name) ?? field.defaultValue ?? ''
+            }
+
             return {
                 swarm_app_databackend_key: field.targetColumn?.swarm_app_databackend_key,
                 table_name: field.targetColumn?.tablename,
                 column_name: field.targetColumn?.column,
-                value: this.formatValue(
-                    data[`column-${i}`] || field.defaultValue || '',
-                    field.type ?? 'textfield'
-                )
+                value: this.formatValue(rawValue, field.type ?? 'textfield')
             }
         })
 
@@ -101,7 +110,7 @@ export class WidgetForm extends LitElement {
                 composed: false
             })
         )
-        form.reset()
+        this.resetForm()
         this.dialogOpen = false
     }
 
@@ -223,21 +232,7 @@ export class WidgetForm extends LitElement {
     }
 
     resetForm() {
-        const form = this.shadowRoot?.querySelector('#form') as HTMLFormElement
-        if (!form) return
-        this.inputData?.formFields?.forEach((field, i) => {
-            const name = `column-${i}`
-            if (field.type === 'checkbox') {
-                const cb = form.querySelector(`md-checkbox[name="${name}"]`) as any
-                if (cb) cb.checked = field.preFilledValue === 'true'
-            } else if (field.type === 'dropdown') {
-                const select = form.querySelector(`md-outlined-select[name="${name}"]`) as any
-                if (select) select.value = field.preFilledValue ?? ''
-            } else {
-                const input = form.querySelector(`md-outlined-text-field[name="${name}"]`) as any
-                if (input) input.value = field.preFilledValue ?? ''
-            }
-        })
+        this.formKey++
     }
 
     cancelEdit(event: Event) {
@@ -468,35 +463,39 @@ export class WidgetForm extends LitElement {
     }
 
     renderForm() {
-        return html`
-            <form
-                id="form"
-                slot="content"
-                method="dialog"
-                class="form-content"
-                @submit=${this.handleFormSubmit}
-            >
-                ${repeat(
-                    this.inputData?.formFields?.filter((field) => !field.hiddenField) ?? [],
-                    (field, i) => i,
-                    (field, i) => {
-                        switch (field.type) {
-                            case 'textfield':
-                                return this.renderTextField(field, i)
-                            case 'numberfield':
-                                return this.renderNumberField(field, i)
-                            case 'datetime':
-                                return this.renderDateTimeField(field, i)
-                            case 'textarea':
-                                return this.renderTextArea(field, i)
-                            case 'dropdown':
-                                return this.renderDropdown(field, i)
-                            case 'checkbox':
-                                return this.renderCheckbox(field, i)
+        return keyed(
+            this.formKey,
+            html`
+                <form
+                    id="form"
+                    slot="content"
+                    method="dialog"
+                    class="form-content"
+                    @submit=${this.handleFormSubmit}
+                >
+                    ${repeat(
+                        this.inputData?.formFields ?? [],
+                        (field, i) => i,
+                        (field, i) => {
+                            if (field.hiddenField) return nothing
+                            switch (field.type) {
+                                case 'textfield':
+                                    return this.renderTextField(field, i)
+                                case 'numberfield':
+                                    return this.renderNumberField(field, i)
+                                case 'datetime':
+                                    return this.renderDateTimeField(field, i)
+                                case 'textarea':
+                                    return this.renderTextArea(field, i)
+                                case 'dropdown':
+                                    return this.renderDropdown(field, i)
+                                case 'checkbox':
+                                    return this.renderCheckbox(field, i)
+                            }
                         }
-                    }
-                )}
-            </form>
-        `
+                    )}
+                </form>
+            `
+        )
     }
 }
