@@ -2,7 +2,7 @@ import { html, css, LitElement, PropertyValues, nothing } from 'lit'
 import { repeat } from 'lit/directives/repeat.js'
 import { keyed } from 'lit/directives/keyed.js'
 import { property, state, customElement, query } from 'lit/decorators.js'
-import { InputData, FormFields } from './definition-schema.js'
+import { InputData } from './definition-schema.js'
 
 import '@material/web/fab/fab.js'
 import '@material/web/icon/icon.js'
@@ -36,7 +36,6 @@ export class WidgetForm extends LitElement {
 
     @state() private themeBgColor?: string
     @state() private themeTitleColor?: string
-    @state() private themeSubtitleColor?: string
 
     @state() dialogOpen: boolean = false
 
@@ -63,8 +62,6 @@ export class WidgetForm extends LitElement {
         const cssBgColor = getComputedStyle(this).getPropertyValue('--re-tile-background-color').trim()
         this.themeBgColor = cssBgColor || this.theme?.theme_object?.backgroundColor
         this.themeTitleColor = cssTextColor || this.theme?.theme_object?.title?.textStyle?.color
-        this.themeSubtitleColor =
-            cssTextColor || this.theme?.theme_object?.title?.subtextStyle?.color || this.themeTitleColor
     }
 
     openFormDialog() {
@@ -82,10 +79,13 @@ export class WidgetForm extends LitElement {
             const name = `column-${i}`
             let rawValue: any
 
-            if (field.type === 'checkbox') {
+            if (field.hiddenField) {
+                rawValue = field.preFilledValue ?? field.defaultValue ?? ''
+            } else if (field.type === 'checkbox') {
                 rawValue = formData.has(name) ? 'on' : 'off'
             } else {
-                rawValue = formData.get(name) ?? field.defaultValue ?? ''
+                const entry = formData.get(name)
+                rawValue = entry === null || entry === '' ? (field.defaultValue ?? '') : entry
             }
 
             return {
@@ -134,10 +134,13 @@ export class WidgetForm extends LitElement {
 
     formatValue(value: string, type: string): any {
         switch (type) {
-            case 'numberfield':
-                return parseFloat(value)
+            case 'numberfield': {
+                if (value === '' || value === null || value === undefined) return null
+                const n = parseFloat(value)
+                return Number.isNaN(n) ? null : n
+            }
             case 'checkbox':
-                return value === 'on' ? true : false
+                return value === 'on' || value === 'true' ? true : false
             default:
                 return value
         }
@@ -154,7 +157,7 @@ export class WidgetForm extends LitElement {
                 .pattern="${field.validation ?? ''}"
                 supporting-text=${field.description ?? ''}
                 validation-message="${field.validationMessage ?? 'Invalid input'}"
-                ?required=${field.required && !field.defaultValue}
+                ?required=${field.required && !field.defaultValue && !field.preFilledValue}
             ></md-outlined-text-field>
         `
     }
@@ -172,7 +175,7 @@ export class WidgetForm extends LitElement {
                 min=${field.min ?? ''}
                 max=${field.max ?? ''}
                 supporting-text=${field.description ?? ''}
-                ?required=${field.required && !field.defaultValue}
+                ?required=${field.required && !field.defaultValue && !field.preFilledValue}
             ></md-outlined-text-field>
         `
     }
@@ -183,9 +186,9 @@ export class WidgetForm extends LitElement {
                 <md-checkbox
                     name="column-${i}"
                     aria-label=${field.label ?? ''}
-                    ?checked=${(String(field.preFilledValue) ?? field.defaultValue) === 'true'}
+                    ?checked=${String(field.preFilledValue ?? field.defaultValue) === 'true'}
                     supporting-text=${field.description ?? ''}
-                    ?required=${field.required && !field.defaultValue}
+                    ?required=${field.required && !field.defaultValue && !field.preFilledValue}
                 ></md-checkbox>
                 <label class="label"> ${field.label} </label>
             </div>
@@ -201,7 +204,7 @@ export class WidgetForm extends LitElement {
                 .value="${field.preFilledValue ?? ''}"
                 .placeholder="${field.defaultValue ?? ''}"
                 rows="3"
-                ?required=${field.required && !field.defaultValue}
+                ?required=${field.required && !field.defaultValue && !field.preFilledValue}
                 supporting-text=${field.description ?? ''}
             ></md-outlined-text-field>
         `
@@ -214,7 +217,7 @@ export class WidgetForm extends LitElement {
                 <md-outlined-select
                     name="column-${i}"
                     supporting-text=${field.description ?? ''}
-                    ?required=${field.required && !field.defaultValue}
+                    ?required=${field.required && !field.defaultValue && !field.preFilledValue}
                 >
                     ${repeat(
                         field.values ?? [],
@@ -244,7 +247,7 @@ export class WidgetForm extends LitElement {
                 type="datetime-local"
                 .value="${field.preFilledValue ?? field.defaultValue ?? ''}"
                 supporting-text=${field.description ?? ''}
-                ?required=${field.required && !field.defaultValue}
+                ?required=${field.required && !field.defaultValue && !field.preFilledValue}
             ></md-outlined-text-field>
         `
     }
@@ -254,7 +257,7 @@ export class WidgetForm extends LitElement {
     }
 
     resolveRoute(item?: any): string | undefined {
-        let route = String(item?.route ?? '')
+        let route: string = item?.route ?? ''
         if (!route) return undefined
         if (item?.variables) {
             for (const variable of item.variables) {
@@ -434,7 +437,7 @@ export class WidgetForm extends LitElement {
                           <md-fab
                               aria-label="Add"
                               style="margin-left: 16px; --md-fab-container-color: ${this.theme?.theme_object
-                                  ?.color[0] ?? '#9064f7'}"
+                                  ?.color?.[0] ?? '#9064f7'}"
                               @click=${this.openFormDialog}
                           >
                               <md-icon slot="icon">add</md-icon>
@@ -457,7 +460,6 @@ export class WidgetForm extends LitElement {
                                         form="form"
                                         value="delete"
                                         type="submit"
-                                        autofocus
                                         >Delete</md-filled-button
                                     >`
                                   : nothing}
@@ -491,10 +493,10 @@ export class WidgetForm extends LitElement {
                                         form="form"
                                         value="delete"
                                         type="submit"
-                                        autofocus
                                         >Delete</md-filled-button
                                     >`
                                   : nothing}
+                              <md-outlined-button @click=${this.resetForm}>Reset</md-outlined-button>
                               <md-outlined-button @click=${this.cancelEdit}>Cancel</md-outlined-button>
                               <md-filled-button form="form" value="submit" type="submit" autofocus
                                   >Submit</md-filled-button
@@ -520,13 +522,7 @@ export class WidgetForm extends LitElement {
                         this.inputData?.formFields ?? [],
                         (field, i) => i,
                         (field, i) => {
-                            if (field.hiddenField) {
-                                return html`<input
-                                    type="hidden"
-                                    name="column-${i}"
-                                    .value="${field.preFilledValue ?? field.defaultValue ?? ''}"
-                                />`
-                            }
+                            if (field.hiddenField) return nothing
                             switch (field.type) {
                                 case 'textfield':
                                     return this.renderTextField(field, i)

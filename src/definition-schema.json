@@ -33,10 +33,6 @@
             "title": "Delete-Flag Column",
             "description": "The target table column used to mark records as deleted when the delete button is clicked. This MUST be a boolean column. If the target table has such a deleted_flag column, it should be specified here regardless of the delete button setting.",
             "dataDrivenDisabled": true,
-            "condition": {
-                "relativePath": "../deleteButton",
-                "showIfValueIn": [true]
-            },
             "type": "targetColumn",
             "order": 5
         },
