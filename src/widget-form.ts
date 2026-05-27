@@ -316,6 +316,29 @@ export class WidgetForm extends LitElement {
             padding: 16px;
             box-sizing: border-box;
             overflow: auto;
+            /* Derive scrollbar colors from the (inherited) text color so they
+               follow custom styles and themes — e.g. light thumb on dark bg. */
+            scrollbar-width: thin;
+            scrollbar-color: color-mix(in srgb, currentColor 35%, transparent) transparent;
+        }
+
+        /* WebKit/Blink fallback for browsers without scrollbar-color support. */
+        .wrapper::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .wrapper::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .wrapper::-webkit-scrollbar-thumb {
+            background-color: color-mix(in srgb, currentColor 35%, transparent);
+            border-radius: 4px;
+        }
+
+        .wrapper::-webkit-scrollbar-thumb:hover {
+            background-color: color-mix(in srgb, currentColor 55%, transparent);
         }
 
         .form-actions {
