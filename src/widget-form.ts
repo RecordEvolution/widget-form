@@ -450,7 +450,7 @@ export class WidgetForm extends LitElement {
                     ? html`
                           <md-fab
                               aria-label="Add"
-                              .size=${this.inputData.formButtonStyle.size}
+                              .size=${this.inputData.formButtonStyle?.size || 'medium'}
                               style="margin-left: 16px; --md-fab-container-color: ${(this.inputData
                                   .formButtonStyle?.bgColor ||
                                   this.theme?.theme_object?.color?.[0]) ??
