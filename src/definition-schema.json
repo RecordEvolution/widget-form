@@ -22,24 +22,64 @@
             "type": "boolean",
             "order": 3
         },
+        "formButtonStyle": {
+            "title": "Form Open Button Style",
+            "description": "Customization options for the form open button's appearance. Configure the size, background color, and icon color to match your application's design. These settings only apply when the Form Open Button is enabled.",
+            "dataDrivenDisabled": true,
+            "type": "object",
+            "order": 4,
+            "condition": {
+                "relativePath": "../formButton",
+                "showIfValueIn": [true]
+            },
+            "properties": {
+                "size": {
+                    "title": "Size",
+                    "description": "The size of the form open button. Options include small, medium, and large.",
+                    "dataDrivenDisabled": true,
+                    "type": "string",
+                    "order": 1,
+                    "enum": ["small", "medium", "large"],
+                    "enumLabels": {
+                        "small": "Small",
+                        "medium": "Medium",
+                        "large": "Large"
+                    }
+                },
+                "bgColor": {
+                    "title": "Background Color",
+                    "description": "The background color of the form open button. Can be set to a specific color value (e.g., '#ff0000' for red) or left as default to use the theme's primary color.",
+                    "dataDrivenDisabled": true,
+                    "type": "color",
+                    "order": 2
+                },
+                "color": {
+                    "title": "Icon Color",
+                    "description": "The color of the icon on the form open button. Can be set to a specific color value (e.g., '#ffffff' for white) or left as default to use the theme's primary contrast color.",
+                    "dataDrivenDisabled": true,
+                    "type": "color",
+                    "order": 3
+                }
+            }
+        },
         "deleteButton": {
             "title": "Show Delete Button",
             "description": "When enabled, shows a delete button that allows users to remove existing entries.",
             "dataDrivenDisabled": true,
             "type": "boolean",
-            "order": 4
+            "order": 5
         },
         "deleteFlagColumn": {
             "title": "Delete-Flag Column",
             "description": "The target table column used to mark records as deleted when the delete button is clicked. This MUST be a boolean column. If the target table has such a deleted_flag column, it should be specified here regardless of the delete button setting.",
             "dataDrivenDisabled": true,
             "type": "targetColumn",
-            "order": 5
+            "order": 6
         },
         "deleteNavigationRoute": {
             "title": "Post-Delete Navigation",
             "description": "The destination path to route to after delete. Use for navigating to a home or main page.",
-            "order": 6,
+            "order": 7,
             "condition": {
                 "relativePath": "../deleteButton",
                 "showIfValueIn": [true]
@@ -55,7 +95,7 @@
                 "relativePath": "../deleteButton",
                 "showIfValueIn": [true]
             },
-            "order": 7,
+            "order": 8,
             "items": {
                 "type": "object",
                 "properties": {
@@ -79,7 +119,7 @@
             "title": "Form Fields",
             "description": "Array of input fields that make up the form. Each field defines its type, validation rules, and target database column for storage. Fields are rendered in the order specified.",
             "type": "array",
-            "order": 8,
+            "order": 9,
             "dataDrivenDisabled": true,
             "items": {
                 "type": "object",

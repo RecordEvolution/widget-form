@@ -18,6 +18,10 @@ export type Subtitle = string;
  */
 export type FormOpenButton = boolean;
 /**
+ * The size of the form open button. Options include small, medium, and large.
+ */
+export type Size = "small" | "medium" | "large";
+/**
  * When enabled, shows a delete button that allows users to remove existing entries.
  */
 export type ShowDeleteButton = boolean;
@@ -123,11 +127,33 @@ export interface InputData {
     title?: Title;
     subTitle?: Subtitle;
     formButton?: FormOpenButton;
+    formButtonStyle?: FormOpenButtonStyle;
     deleteButton?: ShowDeleteButton;
     deleteFlagColumn?: DeleteFlagColumn;
     deleteNavigationRoute?: PostDeleteNavigation;
     variables?: PostDeleteNavigationVariables;
     formFields?: FormFields;
+    [k: string]: unknown;
+}
+/**
+ * Customization options for the form open button's appearance. Configure the size, background color, and icon color to match your application's design. These settings only apply when the Form Open Button is enabled.
+ */
+export interface FormOpenButtonStyle {
+    size?: Size;
+    bgColor?: BackgroundColor;
+    color?: IconColor;
+    [k: string]: unknown;
+}
+/**
+ * The background color of the form open button. Can be set to a specific color value (e.g., '#ff0000' for red) or left as default to use the theme's primary color.
+ */
+export interface BackgroundColor {
+    [k: string]: unknown;
+}
+/**
+ * The color of the icon on the form open button. Can be set to a specific color value (e.g., '#ffffff' for white) or left as default to use the theme's primary contrast color.
+ */
+export interface IconColor {
     [k: string]: unknown;
 }
 /**

@@ -11,7 +11,18 @@ export default defineConfig({
         port: 8000
     },
     optimizeDeps: {
-        include: ['@material/web/**/*']
+        include: [
+            '@material/web/fab/fab.js',
+            '@material/web/icon/icon.js',
+            '@material/web/dialog/dialog.js',
+            '@material/web/button/text-button.js',
+            '@material/web/button/outlined-button.js',
+            '@material/web/button/filled-button.js',
+            '@material/web/textfield/outlined-text-field.js',
+            '@material/web/checkbox/checkbox.js',
+            '@material/web/select/outlined-select.js',
+            '@material/web/select/select-option.js'
+        ]
     },
     define: {
         'process.env.NODE_ENV': JSON.stringify('production')

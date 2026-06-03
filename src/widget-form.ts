@@ -296,16 +296,6 @@ export class WidgetForm extends LitElement {
             margin: auto;
         }
 
-        .edit-fab {
-            --md-fab-icon-color: white;
-            --md-fab-container-color: #007bff;
-            --md-fab-label-text-color: white;
-            position: absolute;
-            bottom: 24px;
-            right: 24px;
-            z-index: 10;
-        }
-
         .paging:not([active]) {
             display: none !important;
         }
@@ -414,6 +404,7 @@ export class WidgetForm extends LitElement {
 
         md-dialog {
             overflow: visible;
+            --md-dialog-container-color: #fff;
         }
 
         .header {
@@ -459,8 +450,13 @@ export class WidgetForm extends LitElement {
                     ? html`
                           <md-fab
                               aria-label="Add"
-                              style="margin-left: 16px; --md-fab-container-color: ${this.theme?.theme_object
-                                  ?.color?.[0] ?? '#9064f7'}"
+                              .size=${this.inputData.formButtonStyle.size}
+                              style="margin-left: 16px; --md-fab-container-color: ${(this.inputData
+                                  .formButtonStyle?.bgColor ||
+                                  this.theme?.theme_object?.color?.[0]) ??
+                              '#9064f7'}; --md-fab-icon-color: ${(this.inputData.formButtonStyle?.color ||
+                                  this.theme?.theme_object?.color?.[1]) ??
+                              '#fff'}"
                               @click=${this.openFormDialog}
                           >
                               <md-icon slot="icon">add</md-icon>
