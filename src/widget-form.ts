@@ -248,11 +248,16 @@ export class WidgetForm extends LitElement {
     }
 
     renderDropdown(field: Column, i: number) {
+        // Bind the value on the select itself (not just `selected` on the option):
+        // md-outlined-select only reports its `value` to the form via ElementInternals,
+        // and the declarative `selected` attribute does not reliably sync into it — so
+        // a prefilled option would display but submit empty.
         return html`
             <label class="label">
                 ${field.label}
                 <md-outlined-select
                     name="column-${i}"
+                    .value=${field.preFilledValue ?? field.defaultValue ?? ''}
                     supporting-text=${field.description ?? ''}
                     ?required=${field.required && !field.defaultValue && !field.preFilledValue}
                 >
@@ -261,10 +266,7 @@ export class WidgetForm extends LitElement {
                         (val) => val.value,
                         (val) => {
                             return html`
-                                <md-select-option
-                                    .value="${val.value ?? ''}"
-                                    ?selected="${val.value === (field.preFilledValue ?? field.defaultValue)}"
-                                >
+                                <md-select-option .value="${val.value ?? ''}">
                                     ${val.displayLabel}
                                 </md-select-option>
                             `
