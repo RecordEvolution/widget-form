@@ -478,8 +478,10 @@ export class WidgetForm extends LitElement {
         const bgColorOpaque = bgColor?.startsWith('rgba')
             ? bgColor.replace(/rgba\(([^)]+),\s*[\d.]+\)/, 'rgb($1)')
             : bgColor?.startsWith('#') && bgColor.length === 9
-              ? bgColor.substring(0, 7)
-              : bgColor
+              ? bgColor.substring(0, 7) // #RRGGBBAA -> #RRGGBB
+              : bgColor?.startsWith('#') && bgColor.length === 5
+                ? bgColor.substring(0, 4) // #RGBA -> #RGB
+                : bgColor
         return html`
             <style>
                 :host {
