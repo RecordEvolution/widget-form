@@ -57,6 +57,42 @@ export class WidgetForm extends LitElement {
         this.registerTheme(this.theme)
     }
 
+    protected updated(_changedProperties: PropertyValues): void {
+        this.patchDialogScrim()
+    }
+
+    private dialogScrimPatched = false
+
+    /**
+     * md-dialog renders its scrim as a `<div class="scrim">` sibling of the
+     * native `<dialog>` inside its shadow root, with `position: fixed; z-index: 1`,
+     * while disabling the native backdrop (`::backdrop { background: none }`).
+     * The `<dialog>` is promoted to the top layer by `showModal()`, but the scrim
+     * div stays in the normal layer — confined to this widget's stacking context.
+     * As a result it fails to cover sibling dashboard widgets painted in a higher
+     * stacking context. We re-enable the native `::backdrop` (which lives in the
+     * top layer and spans the whole viewport regardless of ancestor transforms /
+     * stacking contexts) and hide the confined internal scrim.
+     */
+    private patchDialogScrim() {
+        if (this.dialogScrimPatched) return
+        const root = this.dialog?.shadowRoot
+        if (!root) return
+
+        const sheet = new CSSStyleSheet()
+        sheet.replaceSync(`
+            dialog::backdrop {
+                background: var(--md-sys-color-scrim, #000);
+                opacity: 0.32;
+            }
+            .scrim {
+                display: none !important;
+            }
+        `)
+        root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet]
+        this.dialogScrimPatched = true
+    }
+
     registerTheme(theme?: Theme) {
         const cssTextColor = getComputedStyle(this).getPropertyValue('--re-text-color').trim()
         const cssBgColor = getComputedStyle(this).getPropertyValue('--re-tile-background-color').trim()
@@ -359,7 +395,12 @@ export class WidgetForm extends LitElement {
 
         /* The dialog classes */
         .form {
-            min-width: 80%;
+            /* Fields are stacked in a single column, so a wide dialog just
+               stretches them unreadably. Cap at a comfortable form width but
+               shrink to fit narrow viewports. Height stays content-driven
+               (Material's fit-content), capped at 80% of the viewport. */
+            width: min(90vw, 480px);
+            max-height: 80vh;
         }
 
         .form [slot='header'] {
@@ -404,7 +445,6 @@ export class WidgetForm extends LitElement {
 
         md-dialog {
             overflow: visible;
-            --md-dialog-container-color: #fff;
         }
 
         .header {
@@ -439,6 +479,10 @@ export class WidgetForm extends LitElement {
                     --md-sys-color-on-surface-variant: ${fontColor};
                     --md-sys-color-outline: ${fontColor};
                     --md-sys-color-surface-container: ${bgColorOpaque};
+                    /* Dialog/widget surface honors the theme alpha (may be transparent),
+                       while the select dropdown panel always uses the alpha-stripped
+                       color so it stays fully opaque. */
+                    --md-dialog-container-color: ${bgColor};
                     --md-menu-container-color: ${bgColorOpaque};
                     --md-menu-item-selected-container-color: ${bgColorOpaque};
                     --md-menu-item-selected-label-text-color: ${fontColor};
@@ -451,8 +495,8 @@ export class WidgetForm extends LitElement {
                           <md-fab
                               aria-label="Add"
                               .size=${this.inputData.formButtonStyle?.size || 'medium'}
-                              style="margin-left: 16px; --md-fab-container-color: ${(this.inputData
-                                  .formButtonStyle?.bgColor ||
+                              style="margin: 8px; --md-fab-container-color: ${(this.inputData.formButtonStyle
+                                  ?.bgColor ||
                                   this.theme?.theme_object?.color?.[0]) ??
                               '#9064f7'}; --md-fab-icon-color: ${(this.inputData.formButtonStyle?.color ||
                                   this.theme?.theme_object?.color?.[1]) ??
@@ -463,10 +507,18 @@ export class WidgetForm extends LitElement {
                           </md-fab>
                       `
                     : nothing}
-                <header>
-                    <h3 class="paging" ?active=${this.inputData?.title}>${this.inputData?.title}</h3>
-                    <p class="paging" ?active=${this.inputData?.subTitle}>${this.inputData?.subTitle}</p>
-                </header>
+                ${!this.inputData?.formButton
+                    ? html`
+                          <header>
+                              <h3 class="paging" ?active=${this.inputData?.title}>
+                                  ${this.inputData?.title}
+                              </h3>
+                              <p class="paging" ?active=${this.inputData?.subTitle}>
+                                  ${this.inputData?.subTitle}
+                              </p>
+                          </header>
+                      `
+                    : nothing}
             </div>
             ${!this.inputData?.formButton
                 ? html`
