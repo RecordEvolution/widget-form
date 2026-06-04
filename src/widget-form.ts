@@ -59,6 +59,7 @@ export class WidgetForm extends LitElement {
 
     protected updated(_changedProperties: PropertyValues): void {
         this.patchDialogScrim()
+        this.toggleAttribute('fab-mode', !!this.inputData?.formButton)
     }
 
     private dialogScrimPatched = false
@@ -332,6 +333,13 @@ export class WidgetForm extends LitElement {
             margin: auto;
         }
 
+        /* In fab mode only the floating button is shown, so the widget tile
+           itself should never paint a background. !important beats an outer
+           tile-background rule (shadow !important wins over the outer tree). */
+        :host([fab-mode]) {
+            background: transparent !important;
+        }
+
         .paging:not([active]) {
             display: none !important;
         }
@@ -479,10 +487,10 @@ export class WidgetForm extends LitElement {
                     --md-sys-color-on-surface-variant: ${fontColor};
                     --md-sys-color-outline: ${fontColor};
                     --md-sys-color-surface-container: ${bgColorOpaque};
-                    /* Dialog/widget surface honors the theme alpha (may be transparent),
-                       while the select dropdown panel always uses the alpha-stripped
-                       color so it stays fully opaque. */
-                    --md-dialog-container-color: ${bgColor};
+                    /* Dialog container and select dropdown panel always use the
+                       alpha-stripped color so they stay fully opaque regardless of
+                       the theme's (possibly translucent) background. */
+                    --md-dialog-container-color: ${bgColorOpaque};
                     --md-menu-container-color: ${bgColorOpaque};
                     --md-menu-item-selected-container-color: ${bgColorOpaque};
                     --md-menu-item-selected-label-text-color: ${fontColor};
