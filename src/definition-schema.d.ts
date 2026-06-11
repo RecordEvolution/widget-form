@@ -70,9 +70,17 @@ export type HintText = string;
  */
 export type PreFilledValue = string;
 /**
+ * Pre-filled checked state for this checkbox when the form loads. Can be a static value or bound to a data source.
+ */
+export type PreFilledValue2 = boolean;
+/**
  * Default value for this field when the form loads. If the user does not provide a value, this default will be used. Can be a static value or bound to a data source.
  */
 export type DefaultValue = string;
+/**
+ * Default checked state for this checkbox when the form loads. If the user does not change it, this state will be used. Can be a static value or bound to a data source.
+ */
+export type DefaultValue2 = boolean;
 /**
  * The minimum allowed numeric value for numberfield types. Values below this will fail validation.
  */
@@ -112,7 +120,11 @@ export type FormFields = {
     description?: HintText;
     targetColumn?: TargetColumn;
     preFilledValue?: PreFilledValue;
+    preFilledValueMultiline?: PreFilledValue1;
+    preFilledValueBoolean?: PreFilledValue2;
     defaultValue?: DefaultValue;
+    defaultValueMultiline?: DefaultValue1;
+    defaultValueBoolean?: DefaultValue2;
     min?: MinimumValue;
     max?: MaximumValue;
     validation?: ValidationRegex;
@@ -166,5 +178,17 @@ export interface DeleteFlagColumn {
  * The database table and column where this field's value will be stored on form submission. Select from available tables and columns. All fields targeting the same table will be combined into a single row insert.
  */
 export interface TargetColumn {
+    [k: string]: unknown;
+}
+/**
+ * Pre-filled value for this field when the form loads. Can be a static value or bound to a data source.
+ */
+export interface PreFilledValue1 {
+    [k: string]: unknown;
+}
+/**
+ * Default value for this field when the form loads. If the user does not provide a value, this default will be used. Can be a static value or bound to a data source.
+ */
+export interface DefaultValue1 {
     [k: string]: unknown;
 }

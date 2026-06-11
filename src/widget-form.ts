@@ -117,12 +117,13 @@ export class WidgetForm extends LitElement {
             let rawValue: any
 
             if (field.hiddenField) {
-                rawValue = field.preFilledValue ?? field.defaultValue ?? ''
+                rawValue = this.effectivePreFilledValue(field) ?? this.effectiveDefaultValue(field) ?? ''
             } else if (field.type === 'checkbox') {
                 rawValue = formData.has(name) ? 'on' : 'off'
             } else {
                 const entry = formData.get(name)
-                rawValue = entry === null || entry === '' ? (field.defaultValue ?? '') : entry
+                rawValue =
+                    entry === null || entry === '' ? (this.effectiveDefaultValue(field) ?? '') : entry
             }
 
             return {
@@ -167,6 +168,31 @@ export class WidgetForm extends LitElement {
 
         this.resetForm()
         this.dialogOpen = false
+    }
+
+    // preFilledValue/defaultValue and their *Multiline/*Boolean twins are separate
+    // config keys (the editor shows a single-line, multi-line or checkbox input
+    // depending on the field type). Resolve by the current type — normalizing the
+    // boolean keys to 'true'/'false' strings for the existing downstream logic —
+    // and fall back to the single-line key so fields configured before the split
+    // keep their values. A value lingering in a hidden twin key after a type
+    // switch is ignored.
+    effectivePreFilledValue(field: Column): string | undefined {
+        if (field.type === 'textarea')
+            return (field.preFilledValueMultiline as string | undefined) ?? field.preFilledValue
+        if (field.type === 'checkbox')
+            return field.preFilledValueBoolean != null
+                ? String(field.preFilledValueBoolean)
+                : field.preFilledValue
+        return field.preFilledValue
+    }
+
+    effectiveDefaultValue(field: Column): string | undefined {
+        if (field.type === 'textarea')
+            return (field.defaultValueMultiline as string | undefined) ?? field.defaultValue
+        if (field.type === 'checkbox')
+            return field.defaultValueBoolean != null ? String(field.defaultValueBoolean) : field.defaultValue
+        return field.defaultValue
     }
 
     formatValue(value: string, type: string): any {
@@ -218,14 +244,16 @@ export class WidgetForm extends LitElement {
     }
 
     renderCheckbox(field: Column, i: number) {
+        const preFilledValue = this.effectivePreFilledValue(field)
+        const defaultValue = this.effectiveDefaultValue(field)
         return html`
             <div class="checkbox-container">
                 <md-checkbox
                     name="column-${i}"
                     aria-label=${field.label ?? ''}
-                    ?checked=${String(field.preFilledValue ?? field.defaultValue) === 'true'}
+                    ?checked=${String(preFilledValue ?? defaultValue) === 'true'}
                     supporting-text=${field.description ?? ''}
-                    ?required=${field.required && !field.defaultValue && !field.preFilledValue}
+                    ?required=${field.required && !defaultValue && !preFilledValue}
                 ></md-checkbox>
                 <label class="label"> ${field.label} </label>
             </div>
@@ -233,15 +261,17 @@ export class WidgetForm extends LitElement {
     }
 
     renderTextArea(field: Column, i: number) {
+        const preFilledValue = this.effectivePreFilledValue(field)
+        const defaultValue = this.effectiveDefaultValue(field)
         return html`
             <md-outlined-text-field
                 .name="column-${i}"
                 .label="${field.label ?? ''}"
                 type="textarea"
-                .value="${field.preFilledValue ?? ''}"
-                .placeholder="${field.defaultValue ?? ''}"
+                .value="${preFilledValue ?? ''}"
+                .placeholder="${defaultValue ?? ''}"
                 rows="3"
-                ?required=${field.required && !field.defaultValue && !field.preFilledValue}
+                ?required=${field.required && !defaultValue && !preFilledValue}
                 supporting-text=${field.description ?? ''}
             ></md-outlined-text-field>
         `

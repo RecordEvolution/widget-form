@@ -174,13 +174,61 @@
                         "title": "Pre-filled Value",
                         "description": "Pre-filled value for this field when the form loads. Can be a static value or bound to a data source.",
                         "type": "string",
+                        "condition": {
+                            "relativePath": "../type",
+                            "showIfValueIn": ["dropdown", "textfield", "numberfield", "datetime"]
+                        },
                         "order": 7
+                    },
+                    "preFilledValueMultiline": {
+                        "title": "Pre-filled Value",
+                        "description": "Pre-filled value for this field when the form loads. Can be a static value or bound to a data source.",
+                        "type": "textarea",
+                        "condition": {
+                            "relativePath": "../type",
+                            "showIfValueIn": ["textarea"]
+                        },
+                        "order": 8
+                    },
+                    "preFilledValueBoolean": {
+                        "title": "Pre-filled Value",
+                        "description": "Pre-filled checked state for this checkbox when the form loads. Can be a static value or bound to a data source.",
+                        "type": "boolean",
+                        "condition": {
+                            "relativePath": "../type",
+                            "showIfValueIn": ["checkbox"]
+                        },
+                        "order": 9
                     },
                     "defaultValue": {
                         "title": "Default Value",
                         "description": "Default value for this field when the form loads. If the user does not provide a value, this default will be used. Can be a static value or bound to a data source.",
                         "type": "string",
-                        "order": 8
+                        "condition": {
+                            "relativePath": "../type",
+                            "showIfValueIn": ["dropdown", "textfield", "numberfield", "datetime"]
+                        },
+                        "order": 10
+                    },
+                    "defaultValueMultiline": {
+                        "title": "Default Value",
+                        "description": "Default value for this field when the form loads. If the user does not provide a value, this default will be used. Can be a static value or bound to a data source.",
+                        "type": "textarea",
+                        "condition": {
+                            "relativePath": "../type",
+                            "showIfValueIn": ["textarea"]
+                        },
+                        "order": 11
+                    },
+                    "defaultValueBoolean": {
+                        "title": "Default Value",
+                        "description": "Default checked state for this checkbox when the form loads. If the user does not change it, this state will be used. Can be a static value or bound to a data source.",
+                        "type": "boolean",
+                        "condition": {
+                            "relativePath": "../type",
+                            "showIfValueIn": ["checkbox"]
+                        },
+                        "order": 12
                     },
                     "min": {
                         "title": "Minimum Value",
@@ -191,7 +239,7 @@
                             "relativePath": "../type",
                             "showIfValueIn": ["numberfield"]
                         },
-                        "order": 9
+                        "order": 13
                     },
                     "max": {
                         "title": "Maximum Value",
@@ -202,7 +250,7 @@
                             "relativePath": "../type",
                             "showIfValueIn": ["numberfield"]
                         },
-                        "order": 10
+                        "order": 14
                     },
                     "validation": {
                         "title": "Validation Regex",
@@ -213,7 +261,7 @@
                             "relativePath": "../type",
                             "showIfValueIn": ["textfield"]
                         },
-                        "order": 11
+                        "order": 15
                     },
                     "values": {
                         "title": "Dropdown Values",
@@ -242,7 +290,7 @@
                                 }
                             }
                         },
-                        "order": 12
+                        "order": 16
                     }
                 }
             }
