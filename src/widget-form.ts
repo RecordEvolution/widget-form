@@ -43,6 +43,11 @@ export class WidgetForm extends LitElement {
 
     @state() private formKey = 0
 
+    // Current value of every field, keyed by field label. Rebuilt on each
+    // input/change so conditional-display rules (which reference a controlling
+    // field by its label) re-evaluate live as the user fills the form.
+    @state() private fieldValues: Record<string, string> = {}
+
     version: string = 'versionplaceholder'
 
     update(changedProperties: Map<string, any>) {
@@ -113,25 +118,21 @@ export class WidgetForm extends LitElement {
         const form = event.target as HTMLFormElement
         const formData = new FormData(form)
         const submitData = this.inputData?.formFields?.map((field, i) => {
-            const name = `column-${i}`
-            let rawValue: any
-
-            if (field.hiddenField) {
-                rawValue = this.effectivePreFilledValue(field) ?? this.effectiveDefaultValue(field) ?? ''
-            } else if (field.type === 'checkbox') {
-                rawValue = formData.has(name) ? 'on' : 'off'
-            } else {
-                const entry = formData.get(name)
-                rawValue =
-                    entry === null || entry === '' ? (this.effectiveDefaultValue(field) ?? '') : entry
-            }
-
-            return {
+            const targetColumn = {
                 swarm_app_databackend_key: field.targetColumn?.swarm_app_databackend_key,
                 table_name: field.targetColumn?.tablename,
-                column_name: field.targetColumn?.column,
-                value: this.formatValue(rawValue, field.type ?? 'textfield')
+                column_name: field.targetColumn?.column
             }
+
+            // A field hidden by an unmet conditional-display rule is "not
+            // applicable": submit null and skip value/default resolution. Its
+            // required rule never fired because the element was absent from the DOM.
+            if (!field.hiddenField && !this.isFieldVisible(field)) {
+                return { ...targetColumn, value: null }
+            }
+
+            const rawValue = this.currentRawValue(field, i, formData)
+            return { ...targetColumn, value: this.formatValue(rawValue, field.type ?? 'textfield') }
         })
 
         if (this.inputData?.deleteFlagColumn)
@@ -207,6 +208,56 @@ export class WidgetForm extends LitElement {
             default:
                 return value
         }
+    }
+
+    // Resolve a field's current raw (string) value, applying the same
+    // empty-falls-back-to-default rule used at submit so condition evaluation and
+    // submission agree. Checkbox is normalized to 'true'/'false' (matching the
+    // literals designers use in a condition list); a field absent from the DOM
+    // (hidden by its own condition) yields its effective default value.
+    currentRawValue(field: Column, i: number, formData: FormData): string {
+        const name = `column-${i}`
+        if (field.hiddenField)
+            return this.effectivePreFilledValue(field) ?? this.effectiveDefaultValue(field) ?? ''
+        if (field.type === 'checkbox') return formData.has(name) ? 'true' : 'false'
+        const entry = formData.get(name)
+        return entry === null || entry === '' ? (this.effectiveDefaultValue(field) ?? '') : String(entry)
+    }
+
+    // Rebuild the label→value map on every input/change so conditional-display
+    // rules re-evaluate live. A single delegated listener on the <form> catches
+    // all field types (Material components bubble input/change within this root).
+    handleFieldChange(event: Event) {
+        const form = event.currentTarget as HTMLFormElement
+        if (!form) return
+        const formData = new FormData(form)
+        const values: Record<string, string> = {}
+        this.inputData?.formFields?.forEach((field, i) => {
+            if (field.label) values[field.label] = this.currentRawValue(field, i, formData)
+        })
+        this.fieldValues = values
+    }
+
+    // A field is visible unless it declares a conditional-display rule whose
+    // controlling field (referenced by label) does not currently hold one of the
+    // listed values. Fail-open on misconfiguration (unknown field / empty list)
+    // so a half-configured rule never silently hides a field and its data.
+    isFieldVisible(field: Column): boolean {
+        const ref = field.conditionalDisplay?.conditionField?.trim()
+        if (!ref) return true
+        const allowed = (field.conditionalDisplay?.conditionValues ?? '')
+            .split(',')
+            .map((v) => v.trim())
+            .filter((v) => v !== '')
+        if (allowed.length === 0) return true
+        const controller = this.inputData?.formFields?.find((f) => f.label === ref)
+        if (!controller) return true
+        const current =
+            this.fieldValues[ref] ??
+            this.effectivePreFilledValue(controller) ??
+            this.effectiveDefaultValue(controller) ??
+            ''
+        return allowed.includes(String(current))
     }
 
     renderTextField(field: Column, i: number) {
@@ -323,6 +374,7 @@ export class WidgetForm extends LitElement {
 
     resetForm() {
         this.formKey++
+        this.fieldValues = {}
     }
 
     resolveRoute(item?: any): string | undefined {
@@ -630,12 +682,15 @@ export class WidgetForm extends LitElement {
                     method="dialog"
                     class="form-content"
                     @submit=${this.handleFormSubmit}
+                    @input=${this.handleFieldChange}
+                    @change=${this.handleFieldChange}
                 >
                     ${repeat(
                         this.inputData?.formFields ?? [],
                         (field, i) => i,
                         (field, i) => {
                             if (field.hiddenField) return nothing
+                            if (!this.isFieldVisible(field)) return nothing
                             switch (field.type) {
                                 case 'textfield':
                                     return this.renderTextField(field, i)

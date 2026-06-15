@@ -291,6 +291,29 @@
                             }
                         },
                         "order": 16
+                    },
+                    "conditionalDisplay": {
+                        "title": "Conditional Display",
+                        "type": "object",
+                        "description": "Optionally show this field only when another field in this form currently holds one of a set of values. Leave the controlling field empty to always show this field.",
+                        "dataDrivenDisabled": true,
+                        "order": 17,
+                        "properties": {
+                            "conditionField": {
+                                "title": "Conditional On Field",
+                                "type": "string",
+                                "description": "The Label of another field in this form that controls whether this field is shown. Leave empty to always show this field. The match is against the other field's current value (for dropdowns, the option's stored value).",
+                                "dataDrivenDisabled": true,
+                                "order": 1
+                            },
+                            "conditionValues": {
+                                "title": "Show If Value In",
+                                "type": "string",
+                                "description": "Comma-separated list of values. This field is shown only when the field named in 'Conditional On Field' currently holds one of these values. Example: pump, valve. For a checkbox controller use true or false. Has no effect unless 'Conditional On Field' is set.",
+                                "dataDrivenDisabled": true,
+                                "order": 2
+                            }
+                        }
                     }
                 }
             }

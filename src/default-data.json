@@ -44,7 +44,11 @@
             "max": 100,
             "description": "Current operating temperature in °C",
             "targetColumn": "temperature",
-            "defaultValue": "68.5"
+            "defaultValue": "68.5",
+            "conditionalDisplay": {
+                "conditionField": "Machine Type",
+                "conditionValues": "compressor, generator"
+            }
         },
         {
             "label": "Active",

@@ -110,6 +110,14 @@ export type DropdownValues = {
     [k: string]: unknown;
 }[];
 /**
+ * The Label of another field in this form that controls whether this field is shown. Leave empty to always show this field. The match is against the other field's current value (for dropdowns, the option's stored value).
+ */
+export type ConditionalOnField = string;
+/**
+ * Comma-separated list of values. This field is shown only when the field named in 'Conditional On Field' currently holds one of these values. Example: pump, valve. For a checkbox controller use true or false. Has no effect unless 'Conditional On Field' is set.
+ */
+export type ShowIfValueIn = string;
+/**
  * Array of input fields that make up the form. Each field defines its type, validation rules, and target database column for storage. Fields are rendered in the order specified.
  */
 export type FormFields = {
@@ -129,6 +137,7 @@ export type FormFields = {
     max?: MaximumValue;
     validation?: ValidationRegex;
     values?: DropdownValues;
+    conditionalDisplay?: ConditionalDisplay;
     [k: string]: unknown;
 }[];
 
@@ -190,5 +199,13 @@ export interface PreFilledValue1 {
  * Default value for this field when the form loads. If the user does not provide a value, this default will be used. Can be a static value or bound to a data source.
  */
 export interface DefaultValue1 {
+    [k: string]: unknown;
+}
+/**
+ * Optionally show this field only when another field in this form currently holds one of a set of values. Leave the controlling field empty to always show this field.
+ */
+export interface ConditionalDisplay {
+    conditionField?: ConditionalOnField;
+    conditionValues?: ShowIfValueIn;
     [k: string]: unknown;
 }
