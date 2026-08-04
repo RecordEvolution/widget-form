@@ -1,7 +1,6 @@
 {
     "title": "Example Input Form",
     "subTitle": "Please provide machine details",
-    "formTitle": "Add New Machine Record",
     "formButton": false,
     "formFields": [
         {

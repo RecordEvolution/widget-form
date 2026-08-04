@@ -144,7 +144,7 @@ export type FormFields = {
 /**
  * A form widget for collecting user input and storing it in database tables. Use this widget to create data entry interfaces for manual input, configuration settings, user feedback, or any scenario requiring structured data collection. Supports various field types including text, numbers, dropdowns, checkboxes, textareas, and datetime pickers. Each field maps to a database column, enabling direct data persistence. Can display as a button-triggered modal or inline form.
  */
-export interface InputData {
+export interface FormConfiguration {
     title?: Title;
     subTitle?: Subtitle;
     formButton?: FormOpenButton;

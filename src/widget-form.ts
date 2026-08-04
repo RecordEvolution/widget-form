@@ -2,7 +2,7 @@ import { html, css, LitElement, PropertyValues, nothing } from 'lit'
 import { repeat } from 'lit/directives/repeat.js'
 import { keyed } from 'lit/directives/keyed.js'
 import { property, state, customElement, query } from 'lit/decorators.js'
-import { InputData } from './definition-schema.js'
+import { FormConfiguration } from './definition-schema.js'
 
 import '@material/web/fab/fab.js'
 import '@material/web/icon/icon.js'
@@ -18,7 +18,7 @@ import '@material/web/select/select-option.js'
 
 import type { MdDialog } from '@material/web/dialog/dialog.js'
 
-type Column = Exclude<InputData['formFields'], undefined>[number]
+type Column = Exclude<FormConfiguration['formFields'], undefined>[number]
 type Theme = {
     theme_name: string
     theme_object: any
@@ -26,7 +26,7 @@ type Theme = {
 @customElement('widget-form-versionplaceholder')
 export class WidgetForm extends LitElement {
     @property({ type: Object })
-    inputData?: InputData
+    inputData?: FormConfiguration
 
     @property({ type: Object })
     theme?: Theme

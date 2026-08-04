@@ -26,7 +26,7 @@ npm i @record-evolution/widget-form
 
 | Property    | Type        | Description                   |
 | ----------- | ----------- | ----------------------------- |
-| `inputData` | `InputData` | Form configuration and fields |
+| `inputData` | `FormConfiguration` | Form configuration and fields |
 | `theme`     | `Theme`     | Theme object for styling      |
 
 ## Events
@@ -40,7 +40,7 @@ npm i @record-evolution/widget-form
 The form is configured via the `inputData` property:
 
 ```ts
-interface InputData {
+interface FormConfiguration {
     title?: string
     subTitle?: string
     formButton?: boolean // Show button to open form dialog

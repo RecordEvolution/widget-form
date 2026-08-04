@@ -1,6 +1,20 @@
 {
-    "title": "InputData",
+    "title": "Form Configuration",
     "description": "A form widget for collecting user input and storing it in database tables. Use this widget to create data entry interfaces for manual input, configuration settings, user feedback, or any scenario requiring structured data collection. Supports various field types including text, numbers, dropdowns, checkboxes, textareas, and datetime pickers. Each field maps to a database column, enabling direct data persistence. Can display as a button-triggered modal or inline form.",
+    "aiSelection": {
+        "dataShape": "Writes rather than reads. Each formFields[] entry maps one input control to a database column through targetColumn, and submitting stores a row. Field types cover text, number, dropdown, checkbox, textarea and datetime, with validation, required flags, defaults and conditional visibility.",
+        "useWhen": [
+            "A person needs to enter or correct data that is then persisted — manual readings, maintenance notes, quality checks, configuration values, feedback.",
+            "Input must be structured and validated, with required fields, defaults, or fields that appear only when another field has a given value (conditionalDisplay).",
+            "Records should also be deletable or flagged as deleted from the dashboard (deleteButton, deleteFlagColumn)."
+        ],
+        "notFor": [
+            "Narrowing what other widgets display — that is filtering, not data entry. Use widget-filter-dropdown or widget-filter-calendar.",
+            "Sending a command to a device rather than storing a value — use widget-switch, or widget-scada for an industrial symbol with actions.",
+            "Showing stored records back to the user — use widget-table.",
+            "A single button that only navigates somewhere — use widget-navbutton."
+        ]
+    },
     "type": "object",
     "properties": {
         "title": {
