@@ -303,10 +303,14 @@ export class WidgetForm extends LitElement {
                     name="column-${i}"
                     aria-label=${field.label ?? ''}
                     ?checked=${String(preFilledValue ?? defaultValue) === 'true'}
-                    supporting-text=${field.description ?? ''}
                     ?required=${field.required && !defaultValue && !preFilledValue}
                 ></md-checkbox>
-                <label class="label"> ${field.label} </label>
+                <label class="label">
+                    ${field.label}
+                    ${field.description
+                        ? html`<span class="supporting-text">${field.description}</span>`
+                        : nothing}
+                </label>
             </div>
         `
     }
@@ -529,6 +533,14 @@ export class WidgetForm extends LitElement {
         .label {
             display: flex;
             flex-direction: column;
+        }
+
+        /* md-checkbox has no supporting-text of its own, unlike md-outlined-text-field
+           and md-outlined-select, so the hint is rendered by hand to match theirs. */
+        .supporting-text {
+            font-size: 12px;
+            line-height: 16px;
+            color: var(--md-sys-color-on-surface-variant);
         }
 
         md-outlined-select {
