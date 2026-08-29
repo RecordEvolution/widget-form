@@ -17,12 +17,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Pinned, not "24": npm trusted publishing needs npm >= 11.5.1, and the
       # npm bundled with a Node line is not something we want floating.
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "24.20.0"
           registry-url: "https://registry.npmjs.org"
