@@ -23,6 +23,84 @@ type Theme = {
     theme_name: string
     theme_object: any
 }
+
+// The HTML `pattern` attribute is compiled with the RegExp `v` flag, which
+// reserves these characters inside a character class: they have to be escaped
+// even where the older `u` flag accepted them bare.
+const V_RESERVED_IN_CLASS = new Set(['(', ')', '[', '{', '}', '/', '|'])
+
+// Escape the characters a `v`-flag character class reserves but that were
+// plainly meant literally, so a regex written against the older semantics —
+// `^[a-zA-Z0-9 _-]+$` and friends — keeps working. A hyphen is left alone
+// where it sits between two class atoms, because there it is a range operator.
+const escapeForVFlag = (pattern: string): string => {
+    let out = ''
+    let inClass = false
+    // Index of the first atom of the current class, i.e. past `[` and any `^`.
+    let classContentStart = 0
+    for (let i = 0; i < pattern.length; i++) {
+        const char = pattern[i]
+        if (char === '\\') {
+            out += char + (pattern[i + 1] ?? '')
+            i++
+        } else if (!inClass) {
+            if (char === '[') {
+                inClass = true
+                classContentStart = pattern[i + 1] === '^' ? i + 2 : i + 1
+            }
+            out += char
+        } else if (char === ']') {
+            inClass = false
+            out += char
+        } else if (char === '-') {
+            const isRange = i > classContentStart && i < pattern.length - 1 && pattern[i + 1] !== ']'
+            out += isRange ? char : '\\-'
+        } else {
+            out += V_RESERVED_IN_CLASS.has(char) ? '\\' + char : char
+        }
+    }
+    return out
+}
+
+const compilesAsPattern = (pattern: string): boolean => {
+    try {
+        // Same shape the HTML spec compiles the `pattern` attribute with.
+        new RegExp('^(?:' + pattern + ')$', 'v')
+        return true
+    } catch {
+        return false
+    }
+}
+
+const patternCache = new Map<string, string>()
+
+// A regex the browser cannot compile makes the text field throw a SyntaxError
+// on every validity read, which kills validation reporting and form submission
+// for the whole form. Repair what can be repaired, and drop the rest so a
+// mis-escaped config costs one field's validation instead of the form.
+const browserSafePattern = (raw?: string | null): string => {
+    const pattern = raw?.trim()
+    if (!pattern) return ''
+    const cached = patternCache.get(pattern)
+    if (cached !== undefined) return cached
+
+    let safe = ''
+    if (compilesAsPattern(pattern)) {
+        safe = pattern
+    } else {
+        const escaped = escapeForVFlag(pattern)
+        if (compilesAsPattern(escaped)) {
+            safe = escaped
+        } else {
+            console.warn(
+                `widget-form: ignoring validation regex "${pattern}" — it is not a valid regular expression under the "v" flag the HTML pattern attribute uses.`
+            )
+        }
+    }
+    patternCache.set(pattern, safe)
+    return safe
+}
+
 @customElement('widget-form-versionplaceholder')
 export class WidgetForm extends LitElement {
     @property({ type: Object })
@@ -268,7 +346,7 @@ export class WidgetForm extends LitElement {
                 .type="${field.type === 'numberfield' ? 'number' : 'text'}"
                 .value="${field.preFilledValue ?? ''}"
                 .placeholder="${field.defaultValue ?? ''}"
-                .pattern="${field.validation ?? ''}"
+                .pattern="${browserSafePattern(field.validation)}"
                 supporting-text=${field.description ?? ''}
                 validation-message="${field.validationMessage ?? 'Invalid input'}"
                 ?required=${field.required && !field.defaultValue && !field.preFilledValue}
