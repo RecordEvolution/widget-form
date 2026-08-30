@@ -530,6 +530,16 @@ export class WidgetForm extends LitElement {
             gap: 12px;
         }
 
+        /* The box has a fixed size, so it must not absorb the shrinking when a long
+           label wraps in a narrow container - only the label may give way. */
+        .checkbox-container md-checkbox {
+            flex: 0 0 auto;
+        }
+
+        .checkbox-container .label {
+            min-width: 0;
+        }
+
         .label {
             display: flex;
             flex-direction: column;
