@@ -178,10 +178,8 @@ export class WidgetForm extends LitElement {
     }
 
     registerTheme(theme?: Theme) {
-        const cssTextColor = getComputedStyle(this).getPropertyValue('--re-text-color').trim()
-        const cssBgColor = getComputedStyle(this).getPropertyValue('--re-tile-background-color').trim()
-        this.themeBgColor = cssBgColor || this.theme?.theme_object?.backgroundColor
-        this.themeTitleColor = cssTextColor || this.theme?.theme_object?.title?.textStyle?.color
+        this.themeBgColor = `var(--re-tile-background-color, ${this.theme?.theme_object?.backgroundColor || 'transparent'})`
+        this.themeTitleColor = `var(--re-text-color, ${this.theme?.theme_object?.title?.textStyle?.color || 'inherit'})`
     }
 
     openFormDialog() {
@@ -656,16 +654,32 @@ export class WidgetForm extends LitElement {
         }
     `
 
+    /**
+     * Resolved background colour, for the alpha-stripping below.
+     *
+     * themeBgColor holds a var() chain so the tile tracks the host's
+     * --re-tile-background-color live, but a chain cannot be picked apart in
+     * JS. The opaque variant therefore resolves the colour here, at render
+     * time, instead of reading a value cached at the last theme change.
+     */
+    private resolvedBgColor(): string | undefined {
+        return (
+            getComputedStyle(this).getPropertyValue('--re-tile-background-color').trim() ||
+            this.theme?.theme_object?.backgroundColor
+        )
+    }
+
     render() {
         const fontColor = this.themeTitleColor
         const bgColor = this.themeBgColor
-        const bgColorOpaque = bgColor?.startsWith('rgba')
-            ? bgColor.replace(/rgba\(([^)]+),\s*[\d.]+\)/, 'rgb($1)')
-            : bgColor?.startsWith('#') && bgColor.length === 9
-              ? bgColor.substring(0, 7) // #RRGGBBAA -> #RRGGBB
-              : bgColor?.startsWith('#') && bgColor.length === 5
-                ? bgColor.substring(0, 4) // #RGBA -> #RGB
-                : bgColor
+        const opaqueSource = this.resolvedBgColor()
+        const bgColorOpaque = opaqueSource?.startsWith('rgba')
+            ? opaqueSource.replace(/rgba\(([^)]+),\s*[\d.]+\)/, 'rgb($1)')
+            : opaqueSource?.startsWith('#') && opaqueSource.length === 9
+              ? opaqueSource.substring(0, 7) // #RRGGBBAA -> #RRGGBB
+              : opaqueSource?.startsWith('#') && opaqueSource.length === 5
+                ? opaqueSource.substring(0, 4) // #RGBA -> #RGB
+                : opaqueSource
         return html`
             <style>
                 :host {
