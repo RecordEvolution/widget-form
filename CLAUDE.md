@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run watch` — incremental library build only.
 - `npm run types` — regenerates `src/definition-schema.d.ts` from `src/definition-schema.json` using `json-schema-to-typescript`. Run this whenever `definition-schema.json` changes.
 - `npm run analyze` — produces a `custom-elements.json` manifest via `@custom-elements-manifest/analyzer`.
-- `npm run release` — `npm version patch`: preflight guards (on `main`, clean tree, not behind `origin/main`, generated files current, build passes), then commit, bare-semver tag, `git push --follow-tags`, then waits on the CI run and fails if the npm publish fails. `npm run release:minor` / `release:major` for other bumps.
+- `npm run release` — `npm version patch`: preflight guards (on `main`, clean tree, not behind `origin/main`, generated files current, build passes), then the bump and a `dist/` rebuild (the `version` hook, so the local build registers the new tag), then commit, bare-semver tag, `git push --follow-tags`, then waits on the CI run and fails if the npm publish fails. `npm run release:minor` / `release:major` for other bumps.
 - `npm run link` / `unlink` — link the local build into a sibling `../RESWARM/frontend` checkout for in-place testing.
 
 There is no test suite or linter configured; Prettier config lives in `.prettierrc`.
