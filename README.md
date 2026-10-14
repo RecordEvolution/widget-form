@@ -7,14 +7,14 @@ A Lit 3.x web component for creating dynamic forms with configurable fields. Par
 ## Installation
 
 ```bash
-npm i @record-evolution/widget-form
+npm i @ironflock/widget-form
 ```
 
 ## Usage
 
 ```html
 <script type="module">
-    import '@record-evolution/widget-form'
+    import '@ironflock/widget-form'
 </script>
 
 <widget-form-1.0.9></widget-form-1.0.9>
