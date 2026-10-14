@@ -42,7 +42,7 @@ Always edit `definition-schema.json` first, then run `npm run types`. The descri
 ### Build pipeline notes
 
 - `vite.config.ts` externalizes `@material/web/*` and `lit-flatpickr` so consumers provide them. `tslib` is aliased to its ES module entry.
-- `vite-plugin-dts` rolls up declarations into `dist/widget-form.d.ts`.
+- `vite-plugin-dts` emits one declaration per source file (`dist/widget-form.d.ts`, plus `dist/definition-schema.d.ts` copied from `src`). It does not roll them up: bundling needs `@microsoft/api-extractor`, whose `argparse` -> `sprintf-js` chain has no patched release.
 - The demo (`demo/index.html`) imports `../src/widget-form.js` directly and computes the tag from `package.json` version, mirroring how the platform consumes the published build.
 
 ## `aiSelection` in `src/definition-schema.json`

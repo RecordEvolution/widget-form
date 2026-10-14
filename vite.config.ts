@@ -38,9 +38,14 @@ export default defineConfig({
             versionplaceholder: pkg.version,
             preventAssignment: true
         }),
+        // One .d.ts per source file. Not bundled: bundling needs
+        // @microsoft/api-extractor, whose argparse -> sprintf-js chain has no
+        // patched release.
         dts({
-            rollupTypes: true,
-            tsconfigPath: './tsconfig.json'
+            tsconfigPath: './tsconfig.json',
+            entryRoot: 'src',
+            include: ['src'],
+            copyDtsFiles: true
         })
     ],
     build: {
