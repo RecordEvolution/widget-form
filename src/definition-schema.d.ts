@@ -58,9 +58,9 @@ export type PostDeleteNavigationVariables = {
  */
 export type Label1 = string;
 /**
- * The input control type: 'dropdown' for selection from predefined options, 'textfield' for single-line text, 'numberfield' for numeric values, 'checkbox' for boolean yes/no, 'textarea' for multi-line text, 'datetime' for date and time selection.
+ * The input control type: 'dropdown' for selection from predefined options, 'textfield' for single-line text, 'numberfield' for numeric values, 'checkbox' for boolean yes/no, 'textarea' for multi-line text, 'datetime' for date and time selection, 'file' for uploading one file into the app's file storage (FleetFiles), whose key is stored in the target column.
  */
-export type FieldType = "dropdown" | "textfield" | "numberfield" | "checkbox" | "textarea" | "datetime";
+export type FieldType = "dropdown" | "textfield" | "numberfield" | "checkbox" | "textarea" | "datetime" | "file";
 /**
  * When enabled, this field is hidden from users but its value (typically a default or data-bound value) is still submitted with the form. Useful for including metadata, timestamps, or user IDs automatically.
  */
@@ -74,7 +74,7 @@ export type Required = boolean;
  */
 export type HintText = string;
 /**
- * Pre-filled value for this field when the form loads. Can be a static value or bound to a data source.
+ * Pre-filled value for this field when the form loads. Can be a static value or bound to a data source. For a file field, bind it to the target column of the record being edited: the form then shows that file, and a save without a new file keeps it.
  */
 export type PreFilledValue = string;
 /**
@@ -118,6 +118,18 @@ export type DropdownValues = {
     [k: string]: unknown;
 }[];
 /**
+ * Required for a file field: the FleetFiles namespace the file is stored in, one of the namespaces in the files section of the data template of the app that owns the target table ('default' when that app declares none). The namespace's accepted content types and maximum object size also apply. The target column (a string column) receives the stored file's key within this namespace.
+ */
+export type FileNamespace = string;
+/**
+ * Comma-separated MIME types the field accepts, such as 'application/pdf' or 'image/*, application/pdf'. The file picker offers only these, and the form refuses any other file before uploading it. Keep them within the namespace's content types. Leave empty to accept any file the namespace allows.
+ */
+export type AcceptedFileTypes = string;
+/**
+ * Largest file the field accepts, in MB (1 MB = 1,048,576 bytes); the form refuses a larger file before uploading it. Leave empty for the namespace's limit (100 MB unless the data template sets maxObjectBytes). Files up to 6 MB upload everywhere. Larger ones need cloud storage that issues upload links, which an on-premises appliance does not by default, so keep 6 MB or less for a board that runs on an appliance.
+ */
+export type MaximumFileSizeMB = number;
+/**
  * The Label of another field in this form that controls whether this field is shown. Leave empty to always show this field. The match is against the other field's current value (for dropdowns, the option's stored value).
  */
 export type ConditionalOnField = string;
@@ -145,12 +157,18 @@ export type FormFields = {
     max?: MaximumValue;
     validation?: ValidationRegex;
     values?: DropdownValues;
+    fileNamespace?: FileNamespace;
+    acceptedFileTypes?: AcceptedFileTypes;
+    maxFileSizeMB?: MaximumFileSizeMB;
+    fileNameColumn?: FileNameColumn;
+    fileSizeColumn?: FileSizeColumn;
+    fileTypeColumn?: FileTypeColumn;
     conditionalDisplay?: ConditionalDisplay;
     [k: string]: unknown;
 }[];
 
 /**
- * A form widget for collecting user input and storing it in database tables. Use this widget to create data entry interfaces for manual input, configuration settings, user feedback, or any scenario requiring structured data collection. Supports various field types including text, numbers, dropdowns, checkboxes, textareas, and datetime pickers. Each field maps to a database column, enabling direct data persistence. Can display as a button-triggered modal or inline form.
+ * A form widget for collecting user input and storing it in database tables. Use this widget to create data entry interfaces for manual input, configuration settings, user feedback, or any scenario requiring structured data collection. Supports various field types including text, numbers, dropdowns, checkboxes, textareas, datetime pickers and file uploads. Each field maps to a database column, enabling direct data persistence. Can display as a button-triggered modal or inline form.
  */
 export interface FormConfiguration {
     title?: Title;
@@ -216,6 +234,24 @@ export interface PreFilledValue1 {
  * Default value for this field when the form loads. If the user does not provide a value, this default will be used. Can be a static value or bound to a data source.
  */
 export interface DefaultValue1 {
+    [k: string]: unknown;
+}
+/**
+ * Optional: a string column, in the same table as the target column, that receives the uploaded file's original name, such as 'Assembly SOP rev C.pdf'. Written only when a new file is uploaded.
+ */
+export interface FileNameColumn {
+    [k: string]: unknown;
+}
+/**
+ * Optional: a numeric (bigint or numeric) column, in the same table as the target column, that receives the uploaded file's size in bytes. Written only when a new file is uploaded.
+ */
+export interface FileSizeColumn {
+    [k: string]: unknown;
+}
+/**
+ * Optional: a string column, in the same table as the target column, that receives the uploaded file's content type, such as 'application/pdf'. Written only when a new file is uploaded.
+ */
+export interface FileTypeColumn {
     [k: string]: unknown;
 }
 /**

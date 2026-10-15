@@ -1,12 +1,13 @@
 {
     "title": "Form Configuration",
-    "description": "A form widget for collecting user input and storing it in database tables. Use this widget to create data entry interfaces for manual input, configuration settings, user feedback, or any scenario requiring structured data collection. Supports various field types including text, numbers, dropdowns, checkboxes, textareas, and datetime pickers. Each field maps to a database column, enabling direct data persistence. Can display as a button-triggered modal or inline form.",
+    "description": "A form widget for collecting user input and storing it in database tables. Use this widget to create data entry interfaces for manual input, configuration settings, user feedback, or any scenario requiring structured data collection. Supports various field types including text, numbers, dropdowns, checkboxes, textareas, datetime pickers and file uploads. Each field maps to a database column, enabling direct data persistence. Can display as a button-triggered modal or inline form.",
     "aiSelection": {
-        "dataShape": "Writes rather than reads. Each formFields[] entry maps one input control to a database column through targetColumn, and submitting stores a row. Field types cover text, number, dropdown, checkbox, textarea and datetime, with validation, required flags, defaults and conditional visibility.",
+        "dataShape": "Writes rather than reads. Each formFields[] entry maps one input control to a database column through targetColumn, and submitting stores a row. Field types cover text, number, dropdown, checkbox, textarea, datetime and file, with validation, required flags, defaults and conditional visibility. A file field uploads one file into a FleetFiles namespace of the app and stores the file's key in its string column.",
         "useWhen": [
             "A person needs to enter or correct data that is then persisted — manual readings, maintenance notes, quality checks, configuration values, feedback.",
             "Input must be structured and validated, with required fields, defaults, or fields that appear only when another field has a given value (conditionalDisplay).",
-            "Records should also be deletable or flagged as deleted from the dashboard (deleteButton, deleteFlagColumn)."
+            "Records should also be deletable or flagged as deleted from the dashboard (deleteButton, deleteFlagColumn).",
+            "A record comes with a document, image or data file, such as a new SOP revision as a PDF: a field of type 'file' stores the file with the row (fileNamespace, acceptedFileTypes)."
         ],
         "notFor": [
             "Narrowing what other widgets display — that is filtering, not data entry. Use widget-filter-dropdown or widget-filter-calendar.",
@@ -177,11 +178,10 @@
                     },
                     "type": {
                         "title": "Field Type",
-                        "description": "The input control type: 'dropdown' for selection from predefined options, 'textfield' for single-line text, 'numberfield' for numeric values, 'checkbox' for boolean yes/no, 'textarea' for multi-line text, 'datetime' for date and time selection.",
-                        "enum": ["dropdown", "textfield", "numberfield", "checkbox", "textarea", "datetime"],
+                        "description": "The input control type: 'dropdown' for selection from predefined options, 'textfield' for single-line text, 'numberfield' for numeric values, 'checkbox' for boolean yes/no, 'textarea' for multi-line text, 'datetime' for date and time selection, 'file' for uploading one file into the app's file storage (FleetFiles), whose key is stored in the target column.",
+                        "enum": ["dropdown", "textfield", "numberfield", "checkbox", "textarea", "datetime", "file"],
                         "type": "string",
                         "dataDrivenDisabled": true,
-                        "required": true,
                         "order": 2
                     },
                     "hiddenField": {
@@ -215,11 +215,11 @@
                     },
                     "preFilledValue": {
                         "title": "Pre-filled Value",
-                        "description": "Pre-filled value for this field when the form loads. Can be a static value or bound to a data source.",
+                        "description": "Pre-filled value for this field when the form loads. Can be a static value or bound to a data source. For a file field, bind it to the target column of the record being edited: the form then shows that file, and a save without a new file keeps it.",
                         "type": "string",
                         "condition": {
                             "relativePath": "../type",
-                            "showIfValueIn": ["dropdown", "textfield", "numberfield", "datetime"]
+                            "showIfValueIn": ["dropdown", "textfield", "numberfield", "datetime", "file"]
                         },
                         "order": 7
                     },
@@ -335,12 +335,81 @@
                         },
                         "order": 16
                     },
+                    "fileNamespace": {
+                        "title": "File Namespace",
+                        "type": "string",
+                        "description": "Required for a file field: the FleetFiles namespace the file is stored in, one of the namespaces in the files section of the data template of the app that owns the target table ('default' when that app declares none). The namespace's accepted content types and maximum object size also apply. The target column (a string column) receives the stored file's key within this namespace.",
+                        "dataDrivenDisabled": true,
+                        "pattern": "^[a-z][a-z0-9-]{1,62}$",
+                        "condition": {
+                            "relativePath": "../type",
+                            "showIfValueIn": ["file"]
+                        },
+                        "order": 13
+                    },
+                    "acceptedFileTypes": {
+                        "title": "Accepted File Types",
+                        "type": "string",
+                        "description": "Comma-separated MIME types the field accepts, such as 'application/pdf' or 'image/*, application/pdf'. The file picker offers only these, and the form refuses any other file before uploading it. Keep them within the namespace's content types. Leave empty to accept any file the namespace allows.",
+                        "dataDrivenDisabled": true,
+                        "pattern": "^[ \\t]*(?:[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*/(?:\\*|[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*)(?:[ \\t]*,[ \\t]*[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*/(?:\\*|[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*))*)?[ \\t]*$",
+                        "condition": {
+                            "relativePath": "../type",
+                            "showIfValueIn": ["file"]
+                        },
+                        "order": 14
+                    },
+                    "maxFileSizeMB": {
+                        "title": "Maximum File Size (MB)",
+                        "type": "number",
+                        "description": "Largest file the field accepts, in MB (1 MB = 1,048,576 bytes); the form refuses a larger file before uploading it. Leave empty for the namespace's limit (100 MB unless the data template sets maxObjectBytes). Files up to 6 MB upload everywhere. Larger ones need cloud storage that issues upload links, which an on-premises appliance does not by default, so keep 6 MB or less for a board that runs on an appliance.",
+                        "dataDrivenDisabled": true,
+                        "minimum": 0,
+                        "condition": {
+                            "relativePath": "../type",
+                            "showIfValueIn": ["file"]
+                        },
+                        "order": 15
+                    },
+                    "fileNameColumn": {
+                        "title": "File Name Column",
+                        "type": "targetColumn",
+                        "description": "Optional: a string column, in the same table as the target column, that receives the uploaded file's original name, such as 'Assembly SOP rev C.pdf'. Written only when a new file is uploaded.",
+                        "dataDrivenDisabled": true,
+                        "condition": {
+                            "relativePath": "../type",
+                            "showIfValueIn": ["file"]
+                        },
+                        "order": 16
+                    },
+                    "fileSizeColumn": {
+                        "title": "File Size Column",
+                        "type": "targetColumn",
+                        "description": "Optional: a numeric (bigint or numeric) column, in the same table as the target column, that receives the uploaded file's size in bytes. Written only when a new file is uploaded.",
+                        "dataDrivenDisabled": true,
+                        "condition": {
+                            "relativePath": "../type",
+                            "showIfValueIn": ["file"]
+                        },
+                        "order": 17
+                    },
+                    "fileTypeColumn": {
+                        "title": "File Type Column",
+                        "type": "targetColumn",
+                        "description": "Optional: a string column, in the same table as the target column, that receives the uploaded file's content type, such as 'application/pdf'. Written only when a new file is uploaded.",
+                        "dataDrivenDisabled": true,
+                        "condition": {
+                            "relativePath": "../type",
+                            "showIfValueIn": ["file"]
+                        },
+                        "order": 18
+                    },
                     "conditionalDisplay": {
                         "title": "Conditional Display",
                         "type": "object",
                         "description": "Optionally show this field only when another field in this form currently holds one of a set of values. Leave the controlling field empty to always show this field.",
                         "dataDrivenDisabled": true,
-                        "order": 17,
+                        "order": 19,
                         "properties": {
                             "conditionField": {
                                 "title": "Conditional On Field",

@@ -1,6 +1,7 @@
 import { html, css, LitElement, PropertyValues, nothing } from 'lit'
 import { repeat } from 'lit/directives/repeat.js'
 import { keyed } from 'lit/directives/keyed.js'
+import { ifDefined } from 'lit/directives/if-defined.js'
 import { property, state, customElement, query } from 'lit/decorators.js'
 import { FormConfiguration } from './definition-schema.js'
 
@@ -15,6 +16,7 @@ import '@material/web/textfield/outlined-text-field.js'
 import '@material/web/checkbox/checkbox.js'
 import '@material/web/select/outlined-select.js'
 import '@material/web/select/select-option.js'
+import '@material/web/iconbutton/icon-button.js'
 
 import type { MdDialog } from '@material/web/dialog/dialog.js'
 
@@ -23,6 +25,143 @@ type Theme = {
     theme_name: string
     theme_object: any
 }
+
+// Where a value goes: one column of one app table, as the targetColumn picker
+// stored it (the host checks it).
+type TargetRef = {
+    swarm_app_databackend_key?: unknown
+    table_name?: unknown
+    column_name?: unknown
+}
+
+// A column value, as data-submit carries it.
+type ValueItem = TargetRef & { value: unknown }
+
+// A file for the host to store in the app's FleetFiles namespace before it
+// writes the row; the column gets the stored object's key. Only
+// file-data-submit carries these.
+type FileItem = TargetRef & { file: File; namespace: string; contentType: string }
+
+// The detail of file-data-submit. The host claims the event by calling
+// waitUntil() synchronously, while the event is dispatched, with a promise
+// that settles once the files are stored and the rows written, or rejects
+// with an Error whose message the form shows. An older Studio does not know
+// the event, so nobody claims it and nothing is written: a File in a plain
+// data-submit would have been serialized as garbage into the column.
+export type FileDataSubmitDetail = {
+    items: (ValueItem | FileItem)[]
+    waitUntil: (outcome: Promise<unknown>) => void
+}
+
+const FILE_DATA_SUBMIT = 'file-data-submit'
+
+// MIB is how the Maximum File Size setting counts a megabyte.
+const MIB = 1024 * 1024
+
+// A MIME type as FleetFiles matches it: lowercase, no parameters, and a
+// trailing /* as the only wildcard.
+const MIME_TYPE = /^[a-z0-9][a-z0-9!#$&^_.+-]*\/(?:\*|[a-z0-9][a-z0-9!#$&^_.+-]*)$/
+
+// Content types by file extension, for files the browser types loosely: an
+// unknown extension gives File.type '', and Windows with Excel installed calls
+// a CSV application/vnd.ms-excel. The picker's accept attribute also lists the
+// extensions of the accepted types, so the system dialog offers those files.
+const EXTENSION_TYPES: Record<string, string> = {
+    pdf: 'application/pdf',
+    csv: 'text/csv',
+    txt: 'text/plain',
+    json: 'application/json',
+    xml: 'application/xml',
+    zip: 'application/zip',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    gif: 'image/gif',
+    webp: 'image/webp',
+    svg: 'image/svg+xml',
+    mp4: 'video/mp4',
+    webm: 'video/webm',
+    mov: 'video/quicktime'
+}
+
+const typeMatches = (pattern: string, type: string): boolean =>
+    pattern === type || (pattern.endsWith('/*') && type.startsWith(pattern.slice(0, -1)) && type.length > pattern.length - 1)
+
+const acceptedTypesCache = new Map<string, string[]>()
+
+// The Accepted File Types setting as a list of MIME types. Entries that are
+// not a MIME type are dropped with a warning: as an accept filter they would
+// hide every file, and FleetFiles would match none of them either.
+const acceptedTypes = (raw: unknown): string[] => {
+    const text = typeof raw === 'string' ? raw.trim() : ''
+    if (!text) return []
+    const cached = acceptedTypesCache.get(text)
+    if (cached) return cached
+    const types: string[] = []
+    for (const entry of text.split(',')) {
+        const type = entry.trim().toLowerCase()
+        if (!type) continue
+        if (MIME_TYPE.test(type)) types.push(type)
+        else
+            console.warn(
+                `widget-form: ignoring accepted file type "${entry.trim()}" — it is not a MIME type such as application/pdf or image/*.`
+            )
+    }
+    acceptedTypesCache.set(text, types)
+    return types
+}
+
+// The picker's accept attribute: the accepted types plus the extensions that
+// stand for them.
+const acceptAttribute = (types: string[]): string => {
+    if (!types.length) return ''
+    const extensions = Object.entries(EXTENSION_TYPES)
+        .filter(([, type]) => types.some((pattern) => typeMatches(pattern, type)))
+        .map(([extension]) => '.' + extension)
+    return [...types, ...extensions].join(',')
+}
+
+// The content type to store a file under, or undefined when it is none of the
+// accepted types. The browser's type comes first, then the one its extension
+// stands for; with no accepted types the file goes in as whatever it is.
+const fileContentType = (file: File, accepted: string[]): string | undefined => {
+    const own = (file.type.split(';')[0] ?? '').trim().toLowerCase()
+    const extension = /\.([^./]+)$/.exec(file.name)?.[1]?.toLowerCase() ?? ''
+    const candidates = [own, EXTENSION_TYPES[extension] ?? ''].filter(Boolean)
+    if (!accepted.length) return candidates[0] ?? 'application/octet-stream'
+    return candidates.find((type) => accepted.some((pattern) => typeMatches(pattern, type)))
+}
+
+// The Maximum File Size setting in bytes, or undefined when unset or not a
+// positive number.
+const maxFileBytes = (field: Column): number | undefined => {
+    const mb = Number(field.maxFileSizeMB)
+    return field.maxFileSizeMB != null && mb > 0 ? mb * MIB : undefined
+}
+
+// A size for people: bytes, KB or MB in the viewer's locale, counted in 1024s
+// like the Maximum File Size setting.
+const formatBytes = (bytes: number): string => {
+    const [value, unit] =
+        bytes >= MIB ? [bytes / MIB, 'MB'] : bytes >= 1024 ? [bytes / 1024, 'KB'] : [bytes, 'bytes']
+    return `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(value)} ${unit}`
+}
+
+// The file name an object key ends in: the host stores a file under a key
+// whose last segment is the file's own name.
+const fileNameOfKey = (key: string): string => key.split('/').filter(Boolean).pop() ?? key
+
+// A column a file field writes beside the key: name, size or type.
+const companionRef = (target: any): TargetRef | undefined =>
+    target?.tablename && target?.column
+        ? {
+              swarm_app_databackend_key: target.swarm_app_databackend_key,
+              table_name: target.tablename,
+              column_name: target.column
+          }
+        : undefined
 
 // The HTML `pattern` attribute is compiled with the RegExp `v` flag, which
 // reserves these characters inside a character class: they have to be escaped
@@ -235,6 +374,10 @@ const raisedSurface = (surface: string): string =>
 const SCRIM_OPACITY_LIGHT = 0.32
 const SCRIM_OPACITY_DARK = 0.6
 
+// Material 3's error colours for a light and a dark scheme.
+const ERROR_ON_LIGHT = '#b3261e'
+const ERROR_ON_DARK = '#f2b8b5'
+
 @customElement('widget-form-versionplaceholder')
 export class WidgetForm extends LitElement {
     @property({ type: Object })
@@ -260,6 +403,22 @@ export class WidgetForm extends LitElement {
     // field by its label) re-evaluate live as the user fills the form.
     @state() private fieldValues: Record<string, string> = {}
 
+    // The new file each file field holds, by field index, until it is saved
+    // or the form is reset. Not uploaded yet: the host stores it on submit.
+    @state() private chosenFiles: Record<number, File> = {}
+
+    // Why a file field refused the file it was given, by field index.
+    @state() private fileErrors: Record<number, string> = {}
+
+    // The field index a file is being dragged over.
+    @state() private dragTarget?: number
+
+    // While the host uploads files and writes the row: the actions are off.
+    @state() private submitting = false
+
+    // Why the last save failed, shown above the actions.
+    @state() private submitError = ''
+
     version: string = 'versionplaceholder'
 
     update(changedProperties: Map<string, any>) {
@@ -268,6 +427,21 @@ export class WidgetForm extends LitElement {
         }
 
         super.update(changedProperties)
+    }
+
+    protected willUpdate(): void {
+        // A file field that a condition hides loses its input element, and
+        // with it the file; drop the file here too, so the field comes back
+        // empty instead of showing a file its fresh input does not hold.
+        const fields = this.inputData?.formFields ?? []
+        const hidden = Object.keys(this.chosenFiles)
+            .map(Number)
+            .filter((i) => fields[i]?.type !== 'file' || !this.isFieldVisible(fields[i]))
+        if (hidden.length) {
+            const chosen = { ...this.chosenFiles }
+            for (const i of hidden) delete chosen[i]
+            this.chosenFiles = chosen
+        }
     }
 
     protected firstUpdated(_changedProperties: PropertyValues): void {
@@ -336,12 +510,14 @@ export class WidgetForm extends LitElement {
 
     handleFormSubmit(event: Event) {
         event.preventDefault()
+        if (this.submitting) return
         const submitter = (event as SubmitEvent).submitter as HTMLElement
         const action = submitter?.getAttribute('value') ?? 'submit'
 
         const form = event.target as HTMLFormElement
         const formData = new FormData(form)
-        const submitData = this.inputData?.formFields?.map((field, i) => {
+        const submitData: (ValueItem | FileItem)[] = []
+        this.inputData?.formFields?.forEach((field, i) => {
             const targetColumn = {
                 swarm_app_databackend_key: field.targetColumn?.swarm_app_databackend_key,
                 table_name: field.targetColumn?.tablename,
@@ -352,21 +528,41 @@ export class WidgetForm extends LitElement {
             // applicable": submit null and skip value/default resolution. Its
             // required rule never fired because the element was absent from the DOM.
             if (!field.hiddenField && !this.isFieldVisible(field)) {
-                return { ...targetColumn, value: null }
+                submitData.push({ ...targetColumn, value: null })
+                if (field.type === 'file') {
+                    for (const companion of this.fileCompanions(field))
+                        submitData.push({ ...companion.ref, value: null })
+                }
+                return
+            }
+
+            if (field.type === 'file') {
+                submitData.push(...this.fileFieldItems(field, i, targetColumn, action))
+                return
             }
 
             const rawValue = this.currentRawValue(field, i, formData)
-            return { ...targetColumn, value: this.formatValue(rawValue, field.type ?? 'textfield') }
+            submitData.push({ ...targetColumn, value: this.formatValue(rawValue, field.type ?? 'textfield') })
         })
 
         if (this.inputData?.deleteFlagColumn)
-            submitData?.push({
+            submitData.push({
                 swarm_app_databackend_key: this.inputData?.deleteFlagColumn?.swarm_app_databackend_key,
                 table_name: this.inputData?.deleteFlagColumn?.tablename,
                 column_name: this.inputData?.deleteFlagColumn?.column,
                 value: action === 'delete'
             })
 
+        // A form that saves a new file needs the host to upload it first. The
+        // dialog stays open until the host reports back: md-dialog closes on
+        // any method="dialog" submit that reaches it, preventDefault or not.
+        if (submitData.some((item) => 'file' in item)) {
+            event.stopPropagation()
+            this.submitWithFiles(submitData)
+            return
+        }
+
+        this.submitError = ''
         this.dispatchEvent(
             new CustomEvent('data-submit', {
                 detail: submitData,
@@ -393,6 +589,120 @@ export class WidgetForm extends LitElement {
 
         this.resetForm()
         this.dialogOpen = false
+    }
+
+    // The columns a file field writes beside the key, with what each gets.
+    fileCompanions(field: Column): { ref: TargetRef; value: (file: File, contentType: string) => unknown }[] {
+        const companions = [
+            { target: field.fileNameColumn, value: (file: File) => file.name },
+            { target: field.fileSizeColumn, value: (file: File) => file.size },
+            { target: field.fileTypeColumn, value: (_: File, contentType: string) => contentType }
+        ]
+        return companions.flatMap(({ target, value }) => {
+            const ref = companionRef(target)
+            return ref ? [{ ref, value }] : []
+        })
+    }
+
+    // What a visible file field submits. A new file goes to the host to
+    // upload, with its name, size and type for the companion columns. Without
+    // one the record keeps its file: the pre-filled key is written back, and
+    // with no pre-filled key the columns are left out, never set to null, so
+    // a table with entity keys carries the previous values over. A delete
+    // never uploads.
+    fileFieldItems(field: Column, i: number, target: TargetRef, action: string): (ValueItem | FileItem)[] {
+        const file = action === 'delete' ? undefined : this.chosenFiles[i]
+        const namespace = typeof field.fileNamespace === 'string' ? field.fileNamespace.trim() : ''
+        if (file && namespace) {
+            const contentType = fileContentType(file, acceptedTypes(field.acceptedFileTypes))
+            // The picker refused anything else already; this keeps a
+            // mistyped file from slipping through a race.
+            if (contentType) {
+                return [
+                    { ...target, file, namespace, contentType },
+                    ...this.fileCompanions(field).map(({ ref, value }) => ({
+                        ...ref,
+                        value: value(file, contentType)
+                    }))
+                ]
+            }
+        }
+        const existing = this.effectivePreFilledValue(field)
+        return typeof existing === 'string' && existing.trim() ? [{ ...target, value: existing }] : []
+    }
+
+    // Hand the save to the host, which stores the files and then writes the
+    // rows, and keep the form as it is until it reports back: on success it
+    // resets and closes, on failure it stays filled in and says why. With no
+    // host to claim the event, nothing is saved.
+    async submitWithFiles(items: (ValueItem | FileItem)[]) {
+        let outcome: Promise<unknown> | undefined
+        const detail: FileDataSubmitDetail = {
+            items,
+            waitUntil: (promise) => {
+                outcome ??= Promise.resolve(promise)
+            }
+        }
+        this.dispatchEvent(new CustomEvent(FILE_DATA_SUBMIT, { detail, bubbles: false, composed: false }))
+        if (!outcome) {
+            this.submitError =
+                'This board cannot upload files: it runs an IronFlock Studio version without file uploads. Nothing was saved.'
+            return
+        }
+        this.submitting = true
+        this.submitError = ''
+        try {
+            await outcome
+            this.resetForm()
+            this.dialogOpen = false
+        } catch (err) {
+            const message = err instanceof Error ? err.message : typeof err === 'string' ? err : ''
+            this.submitError = message || 'The file could not be saved. Nothing was written.'
+        } finally {
+            this.submitting = false
+        }
+    }
+
+    // Take the file the picker or a drop put into a file field's input, or
+    // refuse it with a reason when its type or size is not accepted.
+    handleFileChosen(event: Event, field: Column, i: number) {
+        const input = event.target as HTMLInputElement
+        const file = input.files?.[0]
+        this.dragTarget = undefined
+        const chosen = { ...this.chosenFiles }
+        const errors = { ...this.fileErrors }
+        delete chosen[i]
+        delete errors[i]
+        if (file) {
+            const accepted = acceptedTypes(field.acceptedFileTypes)
+            const max = maxFileBytes(field)
+            if (!fileContentType(file, accepted)) {
+                errors[i] = `“${file.name}” is not an accepted file type. Accepted: ${accepted.join(', ')}.`
+            } else if (max !== undefined && file.size > max) {
+                errors[i] = `“${file.name}” is ${formatBytes(file.size)}, more than the ${formatBytes(max)} this field accepts.`
+            } else {
+                chosen[i] = file
+            }
+            // A refused file must not stay in the input, where it would
+            // satisfy the field's required rule.
+            if (!chosen[i]) input.value = ''
+        }
+        this.chosenFiles = chosen
+        this.fileErrors = errors
+    }
+
+    clearChosenFile(event: Event, i: number) {
+        const input = (event.currentTarget as HTMLElement)
+            .closest('.file-box')
+            ?.querySelector<HTMLInputElement>('.file-input')
+        if (input) input.value = ''
+        const chosen = { ...this.chosenFiles }
+        const errors = { ...this.fileErrors }
+        delete chosen[i]
+        delete errors[i]
+        this.chosenFiles = chosen
+        this.fileErrors = errors
+        if (input?.form) this.refreshFieldValues(input.form)
     }
 
     // preFilledValue/defaultValue and their *Multiline/*Boolean twins are separate
@@ -443,6 +753,9 @@ export class WidgetForm extends LitElement {
         const name = `column-${i}`
         if (field.hiddenField)
             return this.effectivePreFilledValue(field) ?? this.effectiveDefaultValue(field) ?? ''
+        // A file field holds the name of its new file, or else the key of the
+        // record's current one.
+        if (field.type === 'file') return this.chosenFiles[i]?.name ?? this.effectivePreFilledValue(field) ?? ''
         if (field.type === 'checkbox') return formData.has(name) ? 'true' : 'false'
         const entry = formData.get(name)
         return entry === null || entry === '' ? (this.effectiveDefaultValue(field) ?? '') : String(entry)
@@ -453,7 +766,10 @@ export class WidgetForm extends LitElement {
     // all field types (Material components bubble input/change within this root).
     handleFieldChange(event: Event) {
         const form = event.currentTarget as HTMLFormElement
-        if (!form) return
+        if (form) this.refreshFieldValues(form)
+    }
+
+    refreshFieldValues(form: HTMLFormElement) {
         const formData = new FormData(form)
         const values: Record<string, string> = {}
         this.inputData?.formFields?.forEach((field, i) => {
@@ -604,9 +920,97 @@ export class WidgetForm extends LitElement {
         `
     }
 
+    // A drop zone over a transparent native file input: the input takes the
+    // clicks, the keyboard focus and the drops itself, and its required rule
+    // and the browser's message sit on the box. The box shows the new file,
+    // or else the record's current file (the pre-filled key, whose last
+    // segment is the file's name).
+    renderFileField(field: Column, i: number) {
+        const accepted = acceptedTypes(field.acceptedFileTypes)
+        const max = maxFileBytes(field)
+        const file = this.chosenFiles[i]
+        const prefilled = this.effectivePreFilledValue(field)
+        const existingKey = typeof prefilled === 'string' ? prefilled.trim() : ''
+        const namespace = typeof field.fileNamespace === 'string' ? field.fileNamespace.trim() : ''
+        const error = namespace
+            ? this.fileErrors[i]
+            : 'This field has no File Namespace set, so it cannot store a file.'
+        const required = !!field.required && !existingKey
+        const disabled = !namespace || this.submitting
+        const limits = [accepted.join(', '), max !== undefined ? `up to ${formatBytes(max)}` : '']
+            .filter(Boolean)
+            .join(' · ')
+        const name = file ? file.name : existingKey ? fileNameOfKey(existingKey) : 'Choose a file or drop it here'
+        const meta = file
+            ? formatBytes(file.size)
+            : existingKey
+              ? 'Current file. Choose or drop another one to replace it.'
+              : limits
+        // Over a disabled input a drop would fall through to the browser,
+        // which opens the file in place of the board.
+        const blockDrop = (event: DragEvent) => {
+            if (disabled) event.preventDefault()
+        }
+        return html`
+            <div class="label file-field">
+                <span>${field.label}${required ? ' *' : ''}</span>
+                <div
+                    class="file-box"
+                    ?drag-over=${this.dragTarget === i}
+                    ?invalid=${!!error}
+                    ?disabled=${disabled}
+                    @dragover=${blockDrop}
+                    @drop=${(event: DragEvent) => {
+                        this.dragTarget = undefined
+                        blockDrop(event)
+                    }}
+                >
+                    <md-icon aria-hidden="true">${file || existingKey ? 'description' : 'upload_file'}</md-icon>
+                    <div class="file-text">
+                        <span class="file-name">${name}</span>
+                        ${meta ? html`<span class="file-meta">${meta}</span>` : nothing}
+                    </div>
+                    <input
+                        type="file"
+                        class="file-input"
+                        aria-label=${field.label || 'File'}
+                        aria-describedby="file-hint-${i}"
+                        accept=${ifDefined(acceptAttribute(accepted) || undefined)}
+                        ?required=${required}
+                        ?disabled=${disabled}
+                        @change=${(event: Event) => this.handleFileChosen(event, field, i)}
+                        @dragenter=${() => (this.dragTarget = i)}
+                        @dragleave=${() => (this.dragTarget = undefined)}
+                    />
+                    ${file
+                        ? html`<md-icon-button
+                              class="file-clear"
+                              type="button"
+                              aria-label="Remove ${file.name}"
+                              ?disabled=${this.submitting}
+                              @click=${(event: Event) => this.clearChosenFile(event, i)}
+                              ><md-icon>close</md-icon></md-icon-button
+                          >`
+                        : nothing}
+                </div>
+                <span id="file-hint-${i}" class="supporting-text ${error ? 'error' : ''}"
+                    >${error || field.description || ''}</span
+                >
+            </div>
+        `
+    }
+
+    // Why the last save failed, above the actions; announced when it appears.
+    renderSubmitError() {
+        return this.submitError ? html`<div class="form-error" role="alert">${this.submitError}</div>` : nothing
+    }
+
     resetForm() {
         this.formKey++
         this.fieldValues = {}
+        this.chosenFiles = {}
+        this.fileErrors = {}
+        this.submitError = ''
     }
 
     resolveRoute(item?: any): string | undefined {
@@ -798,6 +1202,103 @@ export class WidgetForm extends LitElement {
             flex: 1;
         }
 
+        .file-field {
+            gap: 4px;
+        }
+
+        /* Indented like the supporting text of the outlined fields. */
+        .file-field .supporting-text {
+            padding: 0 16px;
+        }
+
+        /* Sized like an outlined text field, dashed while it waits for a file. */
+        .file-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 56px;
+            padding: 8px 8px 8px 16px;
+            box-sizing: border-box;
+            border: 1px dashed var(--md-sys-color-outline);
+            border-radius: 4px;
+        }
+
+        .file-box:hover:not([disabled]),
+        .file-box[drag-over] {
+            border-style: solid;
+        }
+
+        .file-box[drag-over] {
+            border-width: 2px;
+            padding-left: 15px;
+        }
+
+        .file-box:has(.file-input:focus-visible) {
+            outline: 2px solid currentColor;
+            outline-offset: 2px;
+        }
+
+        .file-box[invalid] {
+            border-color: var(--md-sys-color-error, #b3261e);
+        }
+
+        .file-box[disabled] {
+            opacity: 0.6;
+        }
+
+        /* The input covers the box, so clicks and drops anywhere on it reach
+           the file picker; only the clear button sits above it. */
+        .file-input {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-input:disabled {
+            cursor: default;
+        }
+
+        .file-text {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-meta {
+            font-size: 12px;
+            line-height: 16px;
+            opacity: 0.8;
+        }
+
+        .file-clear {
+            position: relative;
+            z-index: 1;
+            flex: 0 0 auto;
+        }
+
+        .supporting-text.error,
+        .form-error {
+            color: var(--md-sys-color-error, #b3261e);
+        }
+
+        .form-error {
+            flex-basis: 100%;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+
         md-dialog {
             overflow: visible;
         }
@@ -851,7 +1352,8 @@ export class WidgetForm extends LitElement {
         // The dialog and the menus float above the tile: on a dark surface
         // they are raised and the scrim deepens (raisedSurface()).
         const raisedColor = raisedSurface(bgColorOpaque)
-        this.scrimOpacity = isDarkSurface(bgColorOpaque) ? SCRIM_OPACITY_DARK : SCRIM_OPACITY_LIGHT
+        const darkSurface = isDarkSurface(bgColorOpaque)
+        this.scrimOpacity = darkSurface ? SCRIM_OPACITY_DARK : SCRIM_OPACITY_LIGHT
         return html`
             <style>
                 :host {
@@ -859,6 +1361,10 @@ export class WidgetForm extends LitElement {
                     --md-sys-color-on-surface-variant: ${fontColor};
                     --md-sys-color-outline: ${fontColor};
                     --md-sys-color-surface-container: ${bgColorOpaque};
+                    /* Error text and outlines: Material's light-scheme red
+                       does not read on a dark surface, its dark-scheme one
+                       does. */
+                    --md-sys-color-error: ${darkSurface ? ERROR_ON_DARK : ERROR_ON_LIGHT};
                     /* Dialog container and select dropdown panel are opaque
                        (surfaceColor()), so they hide what is beneath them
                        whatever the tile's background, and raised above a dark
@@ -913,7 +1419,7 @@ export class WidgetForm extends LitElement {
             ${!this.inputData?.formButton
                 ? html`
                       <div class="wrapper">
-                          ${this.renderForm()}
+                          ${this.renderForm()} ${this.renderSubmitError()}
                           <div class="form-actions">
                               ${this.inputData?.deleteButton
                                   ? html`<md-filled-button
@@ -921,12 +1427,20 @@ export class WidgetForm extends LitElement {
                                         form="form"
                                         value="delete"
                                         type="submit"
+                                        ?disabled=${this.submitting}
                                         >Delete</md-filled-button
                                     >`
                                   : nothing}
-                              <md-outlined-button @click=${this.resetForm}>Reset</md-outlined-button>
-                              <md-filled-button form="form" value="submit" type="submit" autofocus
-                                  >Submit</md-filled-button
+                              <md-outlined-button ?disabled=${this.submitting} @click=${this.resetForm}
+                                  >Reset</md-outlined-button
+                              >
+                              <md-filled-button
+                                  form="form"
+                                  value="submit"
+                                  type="submit"
+                                  ?disabled=${this.submitting}
+                                  autofocus
+                                  >${this.submitting ? 'Saving…' : 'Submit'}</md-filled-button
                               >
                           </div>
                       </div>
@@ -949,19 +1463,30 @@ export class WidgetForm extends LitElement {
                           <div slot="headline">${this.inputData?.title ?? 'Data Entry'}</div>
                           ${this.renderForm()}
                           <div slot="actions">
+                              ${this.renderSubmitError()}
                               ${this.inputData?.deleteButton
                                   ? html`<md-filled-button
                                         class="delete-btn"
                                         form="form"
                                         value="delete"
                                         type="submit"
+                                        ?disabled=${this.submitting}
                                         >Delete</md-filled-button
                                     >`
                                   : nothing}
-                              <md-outlined-button @click=${this.resetForm}>Reset</md-outlined-button>
-                              <md-outlined-button @click=${this.cancelEdit}>Cancel</md-outlined-button>
-                              <md-filled-button form="form" value="submit" type="submit" autofocus
-                                  >Submit</md-filled-button
+                              <md-outlined-button ?disabled=${this.submitting} @click=${this.resetForm}
+                                  >Reset</md-outlined-button
+                              >
+                              <md-outlined-button ?disabled=${this.submitting} @click=${this.cancelEdit}
+                                  >Cancel</md-outlined-button
+                              >
+                              <md-filled-button
+                                  form="form"
+                                  value="submit"
+                                  type="submit"
+                                  ?disabled=${this.submitting}
+                                  autofocus
+                                  >${this.submitting ? 'Saving…' : 'Submit'}</md-filled-button
                               >
                           </div>
                       </md-dialog>
@@ -1001,6 +1526,8 @@ export class WidgetForm extends LitElement {
                                     return this.renderDropdown(field, i)
                                 case 'checkbox':
                                     return this.renderCheckbox(field, i)
+                                case 'file':
+                                    return this.renderFileField(field, i)
                             }
                         }
                     )}

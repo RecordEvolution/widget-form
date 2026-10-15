@@ -21,7 +21,8 @@ export default defineConfig({
             '@material/web/textfield/outlined-text-field.js',
             '@material/web/checkbox/checkbox.js',
             '@material/web/select/outlined-select.js',
-            '@material/web/select/select-option.js'
+            '@material/web/select/select-option.js',
+            '@material/web/iconbutton/icon-button.js'
         ]
     },
     define: {

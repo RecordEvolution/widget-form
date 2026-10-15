@@ -51,11 +51,45 @@
             import { html, unsafeStatic } from 'lit/static-html.js'
             import packageJson from '../package.json'
             import '../src/widget-form.js'
-            import data from '../src/default-data.json'
-            import themeObject from './themes/light.json'
+            import defaultData from '../src/default-data.json'
+            import light from './themes/light.json'
+            import chalk from './themes/chalk.json'
+            import vintage from './themes/vintage.json'
+
+            // Demo switches: ?theme=chalk|vintage, ?dialog (Form Open Button),
+            // ?oldhost (a Studio that does not know file-data-submit).
+            const params = new URLSearchParams(location.search)
+            const themes = { light, chalk, vintage }
+            const themeName = themes[params.get('theme')] ? params.get('theme') : 'light'
+            if (themeName === 'chalk') document.body.style.backgroundColor = '#1f2833'
+
+            // File fields stay out of default-data.json, which seeds every new
+            // form tile; the demo adds one new and one pre-filled field.
+            const data = {
+                ...defaultData,
+                formButton: params.has('dialog'),
+                formFields: [
+                    ...defaultData.formFields,
+                    {
+                        label: 'Document',
+                        type: 'file',
+                        required: true,
+                        description: 'A file whose name contains "fail" is refused by the demo host',
+                        fileNamespace: 'documents',
+                        acceptedFileTypes: 'application/pdf, image/*',
+                        maxFileSizeMB: 6
+                    },
+                    {
+                        label: 'Attachment',
+                        type: 'file',
+                        fileNamespace: 'documents',
+                        preFilledValue: '2026-10-15/k3x9q2m7a1/Maintenance report.pdf'
+                    }
+                ]
+            }
 
             const tag = unsafeStatic(`widget-form-${packageJson.version}`)
-            const theme = { theme_name: 'light', theme_object: themeObject }
+            const theme = { theme_name: themeName, theme_object: themes[themeName] }
             render(
                 html`
                     <${tag} class="widget" .theme="${theme}" .inputData=${data}>
@@ -67,6 +101,26 @@
             )
             const widget = document.getElementById('demo').children[0]
             console.log('data', data)
+
+            // A stand-in for Studio: it logs what it would write, and for a
+            // save with files "uploads" them for a second and a half.
+            widget.addEventListener('data-submit', (event) => console.log('data-submit', event.detail))
+            if (!params.has('oldhost')) {
+                widget.addEventListener('file-data-submit', (event) => {
+                    const { items, waitUntil } = event.detail
+                    console.log('file-data-submit', items)
+                    waitUntil(
+                        new Promise((resolve, reject) =>
+                            setTimeout(() => {
+                                const refused = items.find((item) => item.file?.name.includes('fail'))
+                                if (refused) reject(new Error(`The demo host refused “${refused.file.name}”. Nothing was saved.`))
+                                else resolve()
+                            }, 1500)
+                        )
+                    )
+                })
+            }
+
             const keyPathsToRandomize = ['columns.1.values.0.value', 'columns.2.values.0.value']
             const inter = setInterval(() => {
                 const randomizedObj = randomizeObjectValues(data, keyPathsToRandomize)

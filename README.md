@@ -31,9 +31,10 @@ npm i @ironflock/widget-form
 
 ## Events
 
-| Event         | Detail                        | Description                      |
-| ------------- | ----------------------------- | -------------------------------- |
-| `data-submit` | Array of field/value mappings | Fired when the form is submitted |
+| Event              | Detail                                   | Description                                                      |
+| ------------------ | ---------------------------------------- | ---------------------------------------------------------------- |
+| `data-submit`      | Array of field/value mappings            | Fired when the form is submitted                                 |
+| `file-data-submit` | `{ items, waitUntil }` (see File Fields) | Fired instead of `data-submit` when the save includes a new file |
 
 ## Configuration
 
@@ -78,24 +79,55 @@ Each form field supports the following types:
 | `textarea`    | Multi-line text input          |
 | `dropdown`    | Select from predefined options |
 | `datetime`    | Date/time picker               |
+| `file`        | Upload one file (FleetFiles)   |
 
 ### Field Configuration
 
 ```ts
 interface FormField {
     label: string
-    type: 'dropdown' | 'textfield' | 'numberfield' | 'checkbox' | 'textarea' | 'datetime'
+    type: 'dropdown' | 'textfield' | 'numberfield' | 'checkbox' | 'textarea' | 'datetime' | 'file'
     hiddenField?: boolean // Hide field but still submit value
     required?: boolean // Field must be filled
     description?: string // Hint text shown below field
     targetColumn?: TargetColumn // Database column mapping
+    preFilledValue?: string // For a file: the record's current key
     defaultValue?: string
     min?: number // For numberfield
     max?: number // For numberfield
     validation?: string // Regex for textfield
     values?: DropdownValue[] // For dropdown type
+    fileNamespace?: string // For file: the app's FleetFiles namespace (required)
+    acceptedFileTypes?: string // For file: 'application/pdf, image/*'
+    maxFileSizeMB?: number // For file: 1 MB = 1,048,576 bytes
+    fileNameColumn?: TargetColumn // For file: gets the original file name
+    fileSizeColumn?: TargetColumn // For file: gets the size in bytes
+    fileTypeColumn?: TargetColumn // For file: gets the content type
 }
 ```
+
+### File Fields
+
+A `file` field stores one file in the app's file storage (FleetFiles) and writes the stored object's key into its target column, a string column, in the same save as the rest of the form.
+
+- The field is a drop zone: click it to pick a file or drop one on it. It shows the file's name and size, and a button to remove it. Reset clears it.
+- `acceptedFileTypes` (MIME types, `type/*` allowed) filters the picker and refuses other files on the spot; so does `maxFileSizeMB`. The browser's type is used when it fits, otherwise the one the file's extension stands for, so a CSV that Windows calls `application/vnd.ms-excel` is still `text/csv`.
+- `fileNamespace` names a namespace from the `files` section of the app's data template. Its own `contentTypes` and `maxObjectBytes` apply as well. Files up to 6 MB upload on every installation; larger ones only where the platform can issue upload links (the cloud, not an appliance).
+- In an edit form, bind `preFilledValue` to the record's key column. The field then shows that file (the key's last segment is the file name), and a save without a new file writes the key back unchanged. Without a pre-filled key and without a new file, the column is left out of the row, never set to null, so a table with entity keys keeps its previous value. The name, size and type columns are only written with a new file. A file field hidden by Conditional Display submits null, like every other field.
+
+The widget never uploads anything itself. A save with a new file dispatches `file-data-submit` instead of `data-submit`:
+
+```ts
+detail: {
+    items: Array<
+        | { swarm_app_databackend_key, table_name, column_name, value } // as in data-submit
+        | { swarm_app_databackend_key, table_name, column_name, file: File, namespace: string, contentType: string }
+    >
+    waitUntil(outcome: Promise<unknown>): void
+}
+```
+
+The host claims the event by calling `waitUntil()` while it is dispatched. It uploads each `file` under a key of its choosing, puts the key in as that item's value, and writes the rows only when every upload succeeded. The form shows "Saving…" until the promise settles. If it resolves, the form resets and the dialog closes. If it rejects, the form keeps its values and shows the error's message. A host that does not know the event (Studio before file support) never claims it, and the form says that it cannot upload and saves nothing, rather than sending a `File` through `data-submit`, which would write garbage into the column.
 
 ## Development
 
