@@ -55,7 +55,7 @@
             "hiddenField": false,
             "description": "Check if the machine is active",
             "targetColumn": "isActive",
-            "defaultValue": "true"
+            "defaultValueBoolean": true
         },
         {
             "label": "Description",
@@ -63,7 +63,7 @@
             "hiddenField": false,
             "description": "Provide additional notes or comments",
             "targetColumn": "description",
-            "defaultValue": "No issues reported."
+            "defaultValueMultiline": "No issues reported."
         },
         {
             "label": "Last Maintenance",
