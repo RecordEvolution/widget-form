@@ -788,9 +788,10 @@ export class WidgetForm extends LitElement {
      * tile colour or, standalone with no dashboard around the widget, for the
      * dashboard's. The colours are read here, at render time, because the
      * var() chains in registerTheme() cannot be picked apart in JS. Studio
-     * paints --re-background-color on several nested elements, so a
-     * translucent dashboard colour stacks up on screen and the surface is a
-     * little lighter than the tile; opaque and fully transparent ones are exact.
+     * 3.5.7 and earlier painted --re-background-color twice under the tiles, so
+     * there a translucent dashboard colour stacked up on screen and the surface
+     * came out a little lighter than the tile; opaque and fully transparent
+     * dashboard colours were exact, and later studios paint it once.
      */
     private surfaceColor(): string {
         const style = getComputedStyle(this)
