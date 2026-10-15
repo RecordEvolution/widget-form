@@ -204,6 +204,37 @@ const opaqueSurface = (layers: string[]): string => {
     return hex
 }
 
+// WCAG relative luminance of an opaque #rrggbb colour (0 black, 1 white).
+const luminance = (hex: string): number => {
+    const [r, g, b] = [1, 3, 5].map((i) => {
+        const channel = parseInt(hex.slice(i, i + 2), 16) / 255
+        return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+    })
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+// A surface darker than mid grey (#777777 is about 0.18) counts as dark.
+const DARK_SURFACE = 0.18
+
+// How the dialog and the select menus are raised above a dark surface: white
+// at this opacity over it. A dark page barely changes under the scrim, so a
+// dialog in the tile's own colour would sink into it; Material 3 shows
+// elevation in dark schemes by lightening a surface, not by a shadow, which
+// does not show on a dark page either. A light surface needs no lift: the scrim
+// already sets it apart.
+const RAISE_ON_DARK = 'rgba(255, 255, 255, 0.16)'
+
+const isDarkSurface = (surface: string): boolean => luminance(surface) < DARK_SURFACE
+
+// The colour of what floats above a surface: the dialog and the select menus.
+const raisedSurface = (surface: string): string =>
+    isDarkSurface(surface) ? opaqueSurface([surface, RAISE_ON_DARK]) : surface
+
+// Scrim opacity: Material's 32% black over a light dashboard; a dark one needs
+// more to recede behind the dialog.
+const SCRIM_OPACITY_LIGHT = 0.32
+const SCRIM_OPACITY_DARK = 0.6
+
 @customElement('widget-form-versionplaceholder')
 export class WidgetForm extends LitElement {
     @property({ type: Object })
@@ -248,9 +279,14 @@ export class WidgetForm extends LitElement {
         this.toggleAttribute('fab-mode', !!this.inputData?.formButton)
     }
 
-    // Which md-dialog elements carry the patch below. A flag is not enough:
-    // switching the Form Open Button off and on renders a new <md-dialog>.
-    private scrimPatchedDialogs = new WeakSet<MdDialog>()
+    // The patch below per md-dialog element, and the scrim opacity it last
+    // set. A flag is not enough: switching the Form Open Button off and on
+    // renders a new <md-dialog>, and a theme change can turn the surface from
+    // light to dark.
+    private scrimPatches = new WeakMap<MdDialog, { sheet: CSSStyleSheet; opacity: number }>()
+
+    // The scrim opacity for the current surface, set in render().
+    private scrimOpacity = SCRIM_OPACITY_LIGHT
 
     /**
      * md-dialog renders its scrim as a `<div class="scrim">` sibling of the
@@ -261,25 +297,32 @@ export class WidgetForm extends LitElement {
      * As a result it fails to cover sibling dashboard widgets painted in a higher
      * stacking context. We re-enable the native `::backdrop` (which lives in the
      * top layer and spans the whole viewport regardless of ancestor transforms /
-     * stacking contexts) and hide the confined internal scrim.
+     * stacking contexts) and hide the confined internal scrim. Its opacity
+     * follows the surface (scrimOpacity), so the sheet is rewritten when that
+     * changes; the value is written into the sheet rather than passed as a
+     * custom property, because older browsers do not let ::backdrop inherit.
      */
     private patchDialogScrim() {
         const dialog = this.dialog
         const root = dialog?.shadowRoot
-        if (!root || this.scrimPatchedDialogs.has(dialog)) return
-
-        const sheet = new CSSStyleSheet()
-        sheet.replaceSync(`
+        if (!root) return
+        let patch = this.scrimPatches.get(dialog)
+        if (patch?.opacity === this.scrimOpacity) return
+        if (!patch) {
+            patch = { sheet: new CSSStyleSheet(), opacity: NaN }
+            root.adoptedStyleSheets = [...root.adoptedStyleSheets, patch.sheet]
+            this.scrimPatches.set(dialog, patch)
+        }
+        patch.sheet.replaceSync(`
             dialog::backdrop {
                 background: var(--md-sys-color-scrim, #000);
-                opacity: 0.32;
+                opacity: ${this.scrimOpacity};
             }
             .scrim {
                 display: none !important;
             }
         `)
-        root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet]
-        this.scrimPatchedDialogs.add(dialog)
+        patch.opacity = this.scrimOpacity
     }
 
     registerTheme(theme?: Theme) {
@@ -805,6 +848,10 @@ export class WidgetForm extends LitElement {
         const fontColor = this.themeTitleColor
         const bgColor = this.themeBgColor
         const bgColorOpaque = this.surfaceColor()
+        // The dialog and the menus float above the tile: on a dark surface
+        // they are raised and the scrim deepens (raisedSurface()).
+        const raisedColor = raisedSurface(bgColorOpaque)
+        this.scrimOpacity = isDarkSurface(bgColorOpaque) ? SCRIM_OPACITY_DARK : SCRIM_OPACITY_LIGHT
         return html`
             <style>
                 :host {
@@ -812,12 +859,13 @@ export class WidgetForm extends LitElement {
                     --md-sys-color-on-surface-variant: ${fontColor};
                     --md-sys-color-outline: ${fontColor};
                     --md-sys-color-surface-container: ${bgColorOpaque};
-                    /* Dialog container and select dropdown panel always use the
-                       opaque surface colour (surfaceColor()), so they hide what
-                       is beneath them whatever the tile's background. */
-                    --md-dialog-container-color: ${bgColorOpaque};
-                    --md-menu-container-color: ${bgColorOpaque};
-                    --md-menu-item-selected-container-color: ${bgColorOpaque};
+                    /* Dialog container and select dropdown panel are opaque
+                       (surfaceColor()), so they hide what is beneath them
+                       whatever the tile's background, and raised above a dark
+                       surface (raisedSurface()), so they stand out from it. */
+                    --md-dialog-container-color: ${raisedColor};
+                    --md-menu-container-color: ${raisedColor};
+                    --md-menu-item-selected-container-color: ${raisedColor};
                     --md-menu-item-selected-label-text-color: ${fontColor};
                     /* Reset and Cancel take the text colour, which reads on the
                        surface, instead of Material's fixed purple primary, which

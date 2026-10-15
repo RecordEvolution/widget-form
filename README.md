@@ -62,6 +62,10 @@ interface FormDialogSize {
 
 Each value is a number with an optional unit: `px` (assumed when there is none), `%` or `vw`/`vh` for a share of the window, `rem` or `em`. Empty keeps the default. A value replaces Material's own 280×140px minimum and is capped at the window less 24px on each side, so the dialog and its Submit button always stay on screen; a form taller than that scrolls inside the dialog. On an ordinary window a value below the default size therefore changes nothing, while on a window narrower than 328px (or a very short one) any value, even a large one, lets the dialog shrink a little below Material's minimum to keep those margins. Anything else, such as `auto`, `calc()` or a negative number, is ignored with a console warning.
 
+### Dialog Colours
+
+The dialog and its dropdown menus take the tile's colour as it is displayed (the tile over the dashboard background), so the text colour reads on them. On a dark tile they are lightened one step and the backdrop behind the dialog darkens more (60% instead of 32%), so the dialog stands out from the page; on a light tile they keep the tile's colour.
+
 ### Field Types
 
 Each form field supports the following types:
