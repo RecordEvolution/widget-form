@@ -147,6 +147,63 @@ const dialogSizeStyle = (size: FormConfiguration['formDialogSize']) => {
     return declarations.filter(Boolean).join('; ') || nothing
 }
 
+let colorContext: CanvasRenderingContext2D | null | undefined
+
+// A colour as [r, g, b, alpha] in sRGB (channels 0-255), parsed by the browser
+// itself through a canvas's fillStyle, so names, hsl(), hex with alpha,
+// color-mix() and the like all work. A value the browser rejects comes back
+// fully transparent, the way an invalid background-color leaves a tile. Only
+// the normalised string is read, never pixels: with Firefox's
+// resistFingerprinting on, as in Tor Browser, getImageData() answers with
+// random colours.
+const parseColor = (value: string): number[] => {
+    colorContext ??= document.createElement('canvas').getContext('2d')
+    if (!colorContext) return [0, 0, 0, 0]
+    // Chromium hands oklch(), lab(), color() and the like back as written;
+    // mixed into srgb they come back as color(srgb r g b / alpha). It rejects
+    // light-dark() outright but takes it inside color-mix().
+    for (const candidate of [value, `color-mix(in srgb, ${value} 100%, transparent)`]) {
+        // A rejected value leaves the previous fillStyle in place, so set it
+        // after two different placeholders: only an accepted one reads the same.
+        colorContext.fillStyle = '#000'
+        colorContext.fillStyle = candidate
+        const color = String(colorContext.fillStyle)
+        colorContext.fillStyle = '#fff'
+        colorContext.fillStyle = candidate
+        if (String(colorContext.fillStyle) !== color) continue
+        let match = /^#([\da-f]{2})([\da-f]{2})([\da-f]{2})$/.exec(color)
+        if (match) return [...match.slice(1).map((hex) => parseInt(hex, 16)), 1]
+        match = /^rgba\((\d+), (\d+), (\d+), ([\d.]+)\)$/.exec(color)
+        if (match) return match.slice(1).map(Number)
+        match = /^color\(srgb (\S+) (\S+) (\S+)(?: \/ (\S+))?\)$/.exec(color)
+        if (match) {
+            const [r, g, b] = match.slice(1, 4).map((v) => Math.min(Math.max(Number(v) || 0, 0), 1) * 255)
+            return [r, g, b, Number(match[4] ?? 1) || 0]
+        }
+    }
+    return [0, 0, 0, 0]
+}
+
+const surfaceCache = new Map<string, string>()
+
+// Paint the given colours, bottom first, over white, as the screen composites
+// a translucent background over what is behind it, and return the opaque
+// result as #rrggbb.
+const opaqueSurface = (layers: string[]): string => {
+    const key = JSON.stringify(layers)
+    const cached = surfaceCache.get(key)
+    if (cached !== undefined) return cached
+
+    let surface = [255, 255, 255]
+    for (const layer of layers) {
+        const [r, g, b, alpha] = parseColor(layer)
+        surface = [r, g, b].map((channel, i) => channel * alpha + surface[i] * (1 - alpha))
+    }
+    const hex = '#' + surface.map((channel) => Math.round(channel).toString(16).padStart(2, '0')).join('')
+    surfaceCache.set(key, hex)
+    return hex
+}
+
 @customElement('widget-form-versionplaceholder')
 export class WidgetForm extends LitElement {
     @property({ type: Object })
@@ -191,7 +248,9 @@ export class WidgetForm extends LitElement {
         this.toggleAttribute('fab-mode', !!this.inputData?.formButton)
     }
 
-    private dialogScrimPatched = false
+    // Which md-dialog elements carry the patch below. A flag is not enough:
+    // switching the Form Open Button off and on renders a new <md-dialog>.
+    private scrimPatchedDialogs = new WeakSet<MdDialog>()
 
     /**
      * md-dialog renders its scrim as a `<div class="scrim">` sibling of the
@@ -205,9 +264,9 @@ export class WidgetForm extends LitElement {
      * stacking contexts) and hide the confined internal scrim.
      */
     private patchDialogScrim() {
-        if (this.dialogScrimPatched) return
-        const root = this.dialog?.shadowRoot
-        if (!root) return
+        const dialog = this.dialog
+        const root = dialog?.shadowRoot
+        if (!root || this.scrimPatchedDialogs.has(dialog)) return
 
         const sheet = new CSSStyleSheet()
         sheet.replaceSync(`
@@ -220,7 +279,7 @@ export class WidgetForm extends LitElement {
             }
         `)
         root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet]
-        this.dialogScrimPatched = true
+        this.scrimPatchedDialogs.add(dialog)
     }
 
     registerTheme(theme?: Theme) {
@@ -459,11 +518,15 @@ export class WidgetForm extends LitElement {
         // md-outlined-select only reports its `value` to the form via ElementInternals,
         // and the declarative `selected` attribute does not reliably sync into it — so
         // a prefilled option would display but submit empty.
+        // The caption is a div, not a <label> around the select: a label sends its
+        // control a second click, which in Firefox closes the menu the first one
+        // opened. aria-label keeps the select named.
         return html`
-            <label class="label">
+            <div class="label">
                 ${field.label}
                 <md-outlined-select
                     name="column-${i}"
+                    aria-label=${field.label ?? nothing}
                     .value=${field.preFilledValue ?? field.defaultValue ?? ''}
                     supporting-text=${field.description ?? ''}
                     ?required=${field.required && !field.defaultValue && !field.preFilledValue}
@@ -480,7 +543,7 @@ export class WidgetForm extends LitElement {
                         }
                     )}
                 </md-outlined-select>
-            </label>
+            </div>
         `
     }
 
@@ -585,9 +648,13 @@ export class WidgetForm extends LitElement {
             background-color: color-mix(in srgb, currentColor 55%, transparent);
         }
 
+        /* Wrap rather than overflow: with justify-content: flex-end an
+           overflowing row spills out of the left edge, where no scrolling
+           reaches, and a narrow tile would hide its leftmost buttons. */
         .form-actions {
             display: flex;
             flex-direction: row;
+            flex-wrap: wrap;
             justify-content: flex-end;
             gap: 8px;
             margin-top: 16px;
@@ -631,6 +698,13 @@ export class WidgetForm extends LitElement {
 
         .form .headline {
             flex: 1;
+        }
+
+        /* md-dialog lays the actions out as a right-aligned flex row with an
+           8px gap and clips what overflows its container, so without wrapping
+           a narrow window hides the leftmost buttons, Delete first. */
+        .form [slot='actions'] {
+            flex-wrap: wrap;
         }
 
         .form-content,
@@ -703,31 +777,33 @@ export class WidgetForm extends LitElement {
     `
 
     /**
-     * Resolved background colour, for the alpha-stripping below.
+     * Opaque colour for the dialog and the select menus, which float above
+     * the tile and must hide whatever is beneath them.
      *
-     * themeBgColor holds a var() chain so the tile tracks the host's
-     * --re-tile-background-color live, but a chain cannot be picked apart in
-     * JS. The opaque variant therefore resolves the colour here, at render
-     * time, instead of reading a value cached at the last theme change.
+     * --re-text-color is picked to read on the tile as it is displayed:
+     * --re-tile-background-color over the dashboard's --re-background-color,
+     * over the dashboard view's white. That composite is the surface, so text
+     * on it reads as well as on the tile, even where the tile colour is
+     * transparent or translucent. The theme background fills in for a missing
+     * tile colour or, standalone with no dashboard around the widget, for the
+     * dashboard's. The colours are read here, at render time, because the
+     * var() chains in registerTheme() cannot be picked apart in JS. Studio
+     * paints --re-background-color on several nested elements, so a
+     * translucent dashboard colour stacks up on screen and the surface is a
+     * little lighter than the tile; opaque and fully transparent ones are exact.
      */
-    private resolvedBgColor(): string | undefined {
-        return (
-            getComputedStyle(this).getPropertyValue('--re-tile-background-color').trim() ||
-            this.theme?.theme_object?.backgroundColor
-        )
+    private surfaceColor(): string {
+        const style = getComputedStyle(this)
+        const tile = style.getPropertyValue('--re-tile-background-color').trim()
+        const dashboard = style.getPropertyValue('--re-background-color').trim()
+        const themeBg = String(this.theme?.theme_object?.backgroundColor ?? '')
+        return opaqueSurface(dashboard ? [dashboard, tile || themeBg] : [themeBg, tile])
     }
 
     render() {
         const fontColor = this.themeTitleColor
         const bgColor = this.themeBgColor
-        const opaqueSource = this.resolvedBgColor()
-        const bgColorOpaque = opaqueSource?.startsWith('rgba')
-            ? opaqueSource.replace(/rgba\(([^)]+),\s*[\d.]+\)/, 'rgb($1)')
-            : opaqueSource?.startsWith('#') && opaqueSource.length === 9
-              ? opaqueSource.substring(0, 7) // #RRGGBBAA -> #RRGGBB
-              : opaqueSource?.startsWith('#') && opaqueSource.length === 5
-                ? opaqueSource.substring(0, 4) // #RGBA -> #RGB
-                : opaqueSource
+        const bgColorOpaque = this.surfaceColor()
         return html`
             <style>
                 :host {
@@ -736,12 +812,21 @@ export class WidgetForm extends LitElement {
                     --md-sys-color-outline: ${fontColor};
                     --md-sys-color-surface-container: ${bgColorOpaque};
                     /* Dialog container and select dropdown panel always use the
-                       alpha-stripped color so they stay fully opaque regardless of
-                       the theme's (possibly translucent) background. */
+                       opaque surface colour (surfaceColor()), so they hide what
+                       is beneath them whatever the tile's background. */
                     --md-dialog-container-color: ${bgColorOpaque};
                     --md-menu-container-color: ${bgColorOpaque};
                     --md-menu-item-selected-container-color: ${bgColorOpaque};
                     --md-menu-item-selected-label-text-color: ${fontColor};
+                    /* Reset and Cancel take the text colour, which reads on the
+                       surface, instead of Material's fixed purple primary, which
+                       does not on a dark one. Their outline already does. */
+                    --md-outlined-button-label-text-color: ${fontColor};
+                    --md-outlined-button-hover-label-text-color: ${fontColor};
+                    --md-outlined-button-focus-label-text-color: ${fontColor};
+                    --md-outlined-button-pressed-label-text-color: ${fontColor};
+                    --md-outlined-button-hover-state-layer-color: ${fontColor};
+                    --md-outlined-button-pressed-state-layer-color: ${fontColor};
                     color: ${fontColor};
                 }
             </style>
