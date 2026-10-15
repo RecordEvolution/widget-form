@@ -101,6 +101,52 @@ const browserSafePattern = (raw?: string | null): string => {
     return safe
 }
 
+// A Form Dialog Size minimum: a number with an optional unit, no unit meaning
+// px. Nothing else gets through, so a value can neither add a declaration nor
+// open a comment that swallows the cap below; CSS.supports() is no substitute,
+// as it passes '800px/*'. The schema's `pattern` on both settings spells the
+// same grammar for the AI's validate_widget (lowercase units and ASCII
+// whitespace only, as Python's re checks it), so change the two together.
+const DIALOG_MIN_SIZE = /^(\d+(?:\.\d+)?|\.\d+)\s*(px|%|vw|vh|rem|em)?$/i
+
+const dialogMinSizeCache = new Map<string, string>()
+
+// Turn a designer's minimum dialog width or height into a declaration for
+// md-dialog's style attribute, or '' to keep the default when it is unset. It is
+// capped at the window less Material's 24px margins: a minimum beats every
+// max-*, and a dialog pushed off the screen takes along its action bar, the only
+// way out of a dialog that swallows Escape and backdrop clicks. showModal() puts
+// the dialog in the top layer, so % is a share of the window.
+const dialogMinSize = (dimension: 'width' | 'height', raw: unknown): string => {
+    const value = String(raw ?? '').trim()
+    if (!value) return ''
+    const key = `${dimension}:${value}`
+    const cached = dialogMinSizeCache.get(key)
+    if (cached !== undefined) return cached
+
+    let declaration = ''
+    const match = DIALOG_MIN_SIZE.exec(value)
+    if (match) {
+        const length = match[1] + (match[2]?.toLowerCase() ?? 'px')
+        declaration = `min-${dimension}: min(${length}, calc(100% - 48px))`
+    } else {
+        console.warn(
+            `widget-form: ignoring Form Dialog Size minimum ${dimension} "${value}" — it is not a number with an optional unit (px, %, vw, vh, rem or em), such as 800px or 60%.`
+        )
+    }
+    dialogMinSizeCache.set(key, declaration)
+    return declaration
+}
+
+// md-dialog's host is display: contents and holds the size limits its native
+// <dialog> inherits, so its style attribute replaces Material's 280x140px
+// minimum outright and beats the .form rule whenever it is larger. With nothing
+// configured it gets no style at all.
+const dialogSizeStyle = (size: FormConfiguration['formDialogSize']) => {
+    const declarations = [dialogMinSize('width', size?.minWidth), dialogMinSize('height', size?.minHeight)]
+    return declarations.filter(Boolean).join('; ') || nothing
+}
+
 @customElement('widget-form-versionplaceholder')
 export class WidgetForm extends LitElement {
     @property({ type: Object })
@@ -570,7 +616,9 @@ export class WidgetForm extends LitElement {
             /* Fields are stacked in a single column, so a wide dialog just
                stretches them unreadably. Cap at a comfortable form width but
                shrink to fit narrow viewports. Height stays content-driven
-               (Material's fit-content), capped at 80% of the viewport. */
+               (Material's fit-content), capped at 80% of the viewport. A Form
+               Dialog Size minimum goes inline on md-dialog (dialogSizeStyle)
+               and wins over both whenever it is larger. */
             width: min(90vw, 480px);
             max-height: 80vh;
         }
@@ -753,6 +801,7 @@ export class WidgetForm extends LitElement {
                       <md-dialog
                           aria-label="${this.inputData?.title ?? 'Data Entry'}"
                           class="form"
+                          style=${dialogSizeStyle(this.inputData?.formDialogSize)}
                           quick
                           ?open=${this.dialogOpen}
                           @cancel=${(event: any) => {

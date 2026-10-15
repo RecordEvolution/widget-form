@@ -22,6 +22,14 @@ export type FormOpenButton = boolean;
  */
 export type Size = "small" | "medium" | "large";
 /**
+ * Minimum dialog width as a number with an optional unit, such as '800px', '60%' or '50vw' (no unit means px; % and vw are a share of the window width). Leave empty for the default. The dialog is normally 480px wide (less on small screens), so only a larger value makes it wider. The fields stay in one column: text fields, dropdowns and text areas widen with the dialog, while number and date fields keep their 200px.
+ */
+export type MinimumWidth = string;
+/**
+ * Minimum dialog height as a number with an optional unit, such as '600px', '70%' or '90vh' (no unit means px; % and vh are a share of the window height). Leave empty to fit the dialog to its fields. A short form gets empty space below its last field while the buttons stay at the bottom; set the height of the form's tallest state to keep the dialog from resizing when conditional fields appear. A long form scrolls inside the dialog, and a value above 80% shows more of it at once.
+ */
+export type MinimumHeight = string;
+/**
  * When enabled, shows a delete button that allows users to remove existing entries.
  */
 export type ShowDeleteButton = boolean;
@@ -149,6 +157,7 @@ export interface FormConfiguration {
     subTitle?: Subtitle;
     formButton?: FormOpenButton;
     formButtonStyle?: FormOpenButtonStyle;
+    formDialogSize?: FormDialogSize;
     deleteButton?: ShowDeleteButton;
     deleteFlagColumn?: DeleteFlagColumn;
     deleteNavigationRoute?: PostDeleteNavigation;
@@ -175,6 +184,14 @@ export interface BackgroundColor {
  * The color of the icon on the form open button. Can be set to a specific color value (e.g., '#ffffff' for white) or left as default to use the theme's primary contrast color.
  */
 export interface IconColor {
+    [k: string]: unknown;
+}
+/**
+ * Minimum size of the dialog that the Form Open Button opens. By default the dialog is 480px wide (less on small screens) and as tall as its fields, up to 80% of the window height, and it scrolls beyond that. Raise the minimums to give long forms, labels and text areas more room, or to keep the dialog from changing size when conditional fields appear. A minimum never makes the dialog larger than the browser window less 24px on each side, so the dialog and its Submit button always stay on screen. A value that is not a number with an optional unit, such as 'auto', 'calc(100% - 100px)' or a negative number, is ignored with a console warning. These settings only apply when the Form Open Button is enabled.
+ */
+export interface FormDialogSize {
+    minWidth?: MinimumWidth;
+    minHeight?: MinimumHeight;
     [k: string]: unknown;
 }
 /**

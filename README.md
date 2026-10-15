@@ -44,9 +44,23 @@ interface FormConfiguration {
     title?: string
     subTitle?: string
     formButton?: boolean // Show button to open form dialog
+    formDialogSize?: FormDialogSize // Minimum size of that dialog
     formFields?: FormField[]
 }
 ```
+
+### Dialog Size
+
+With `formButton: true` the form opens in a dialog that is 480px wide (narrower on small screens) and as tall as its fields, up to 80% of the window height. `formDialogSize` sets the dialog's minimum width and height:
+
+```ts
+interface FormDialogSize {
+    minWidth?: string // e.g. '800px', '60%', '50vw'
+    minHeight?: string // e.g. '600px', '70%', '90vh'
+}
+```
+
+Each value is a number with an optional unit: `px` (assumed when there is none), `%` or `vw`/`vh` for a share of the window, `rem` or `em`. Empty keeps the default. A value replaces Material's own 280×140px minimum and is capped at the window less 24px on each side, so the dialog and its Submit button always stay on screen; a form taller than that scrolls inside the dialog. On an ordinary window a value below the default size therefore changes nothing, while on a window narrower than 328px (or a very short one) any value, even a large one, lets the dialog shrink a little below Material's minimum to keep those margins. Anything else, such as `auto`, `calc()` or a negative number, is ignored with a console warning.
 
 ### Field Types
 
