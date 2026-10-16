@@ -1354,6 +1354,12 @@ export class WidgetForm extends LitElement {
         const raisedColor = raisedSurface(bgColorOpaque)
         const darkSurface = isDarkSurface(bgColorOpaque)
         this.scrimOpacity = darkSurface ? SCRIM_OPACITY_DARK : SCRIM_OPACITY_LIGHT
+        // A blank or non-string icon name keeps the plus sign; the label names
+        // the form, since a custom icon need not mean "add".
+        const iconName = this.inputData?.formButtonStyle?.iconName
+        const fabIcon = typeof iconName === 'string' && iconName.trim() ? iconName.trim() : 'add'
+        const title = this.inputData?.title
+        const fabLabel = typeof title === 'string' && title.trim() ? title.trim() : 'Open form'
         return html`
             <style>
                 :host {
@@ -1389,7 +1395,7 @@ export class WidgetForm extends LitElement {
                 ${this.inputData?.formButton
                     ? html`
                           <md-fab
-                              aria-label="Add"
+                              aria-label=${fabLabel}
                               .size=${this.inputData.formButtonStyle?.size || 'medium'}
                               style="margin: 8px; --md-fab-container-color: ${(this.inputData.formButtonStyle
                                   ?.bgColor ||
@@ -1399,7 +1405,7 @@ export class WidgetForm extends LitElement {
                               '#fff'}"
                               @click=${this.openFormDialog}
                           >
-                              <md-icon slot="icon">add</md-icon>
+                              <md-icon slot="icon">${fabIcon}</md-icon>
                           </md-fab>
                       `
                     : nothing}

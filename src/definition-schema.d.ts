@@ -22,6 +22,10 @@ export type FormOpenButton = boolean;
  */
 export type Size = "small" | "medium" | "large";
 /**
+ * Material icon name shown on the form open button. Find icon names at https://fonts.google.com/icons (e.g., 'edit_note', 'build', 'upload_file', 'add_comment'). Leave empty for the default plus sign ('add').
+ */
+export type IconName = string;
+/**
  * Minimum dialog width as a number with an optional unit, such as '800px', '60%' or '50vw' (no unit means px; % and vw are a share of the window width). Leave empty for the default. The dialog is normally 480px wide (less on small screens), so only a larger value makes it wider. The fields stay in one column: text fields, dropdowns and text areas widen with the dialog, while number and date fields keep their 200px.
  */
 export type MinimumWidth = string;
@@ -184,12 +188,13 @@ export interface FormConfiguration {
     [k: string]: unknown;
 }
 /**
- * Customization options for the form open button's appearance. Configure the size, background color, and icon color to match your application's design. These settings only apply when the Form Open Button is enabled.
+ * Customization options for the form open button's appearance. Configure the size, background color, icon and icon color to match your application's design. These settings only apply when the Form Open Button is enabled.
  */
 export interface FormOpenButtonStyle {
     size?: Size;
     bgColor?: BackgroundColor;
     color?: IconColor;
+    iconName?: IconName;
     [k: string]: unknown;
 }
 /**

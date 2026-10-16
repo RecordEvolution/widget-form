@@ -39,7 +39,7 @@
         },
         "formButtonStyle": {
             "title": "Form Open Button Style",
-            "description": "Customization options for the form open button's appearance. Configure the size, background color, and icon color to match your application's design. These settings only apply when the Form Open Button is enabled.",
+            "description": "Customization options for the form open button's appearance. Configure the size, background color, icon and icon color to match your application's design. These settings only apply when the Form Open Button is enabled.",
             "dataDrivenDisabled": true,
             "type": "object",
             "order": 4,
@@ -74,6 +74,13 @@
                     "dataDrivenDisabled": true,
                     "type": "color",
                     "order": 3
+                },
+                "iconName": {
+                    "title": "Icon Name",
+                    "description": "Material icon name shown on the form open button. Find icon names at https://fonts.google.com/icons (e.g., 'edit_note', 'build', 'upload_file', 'add_comment'). Leave empty for the default plus sign ('add').",
+                    "dataDrivenDisabled": true,
+                    "type": "string",
+                    "order": 4
                 }
             }
         },
