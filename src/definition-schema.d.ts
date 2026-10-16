@@ -180,6 +180,7 @@ export interface FormConfiguration {
     formButton?: FormOpenButton;
     formButtonStyle?: FormOpenButtonStyle;
     formDialogSize?: FormDialogSize;
+    accentColor?: HighlightColor;
     deleteButton?: ShowDeleteButton;
     deleteFlagColumn?: DeleteFlagColumn;
     deleteNavigationRoute?: PostDeleteNavigation;
@@ -215,6 +216,12 @@ export interface IconColor {
 export interface FormDialogSize {
     minWidth?: MinimumWidth;
     minHeight?: MinimumHeight;
+    [k: string]: unknown;
+}
+/**
+ * Color of the outline and label of the field being edited, of checked checkboxes and of the Submit button. Leave empty to pick it automatically: the theme's first chart color when it stands out clearly from the form's background (a contrast of at least 3:1), otherwise the form's text color. Set it to match an application's brand color; a chosen color is used as is, so pick one that reads on the background.
+ */
+export interface HighlightColor {
     [k: string]: unknown;
 }
 /**

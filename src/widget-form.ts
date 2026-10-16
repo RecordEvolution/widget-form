@@ -378,6 +378,44 @@ const SCRIM_OPACITY_DARK = 0.6
 const ERROR_ON_LIGHT = '#b3261e'
 const ERROR_ON_DARK = '#f2b8b5'
 
+// WCAG contrast ratio of two opaque #rrggbb colours, from 1 to 21.
+const contrast = (a: string, b: string): number => {
+    const [lighter, darker] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+    return (lighter + 0.05) / (darker + 0.05)
+}
+
+// WCAG's minimum contrast for a control's outline against its surroundings.
+const ACCENT_CONTRAST = 3
+
+/**
+ * The highlight colour, Material's primary: the focused field's outline and
+ * label, checked checkboxes and the Submit button. Material's own purple does
+ * not read on every tile. A configured colour is taken as written; otherwise
+ * the theme's first palette colour, when it stands out from the surface;
+ * otherwise the text colour, which is picked to read on the tile. The colour
+ * on it (Submit's label, the check mark) is black or white, whichever reads
+ * better, and the surface itself on the text colour.
+ */
+const accentColors = (
+    configured: unknown,
+    themeColor: unknown,
+    surface: string,
+    textColor: string | undefined
+): { primary: string; onPrimary: string } => {
+    const candidates = [
+        { color: configured, check: false },
+        { color: themeColor, check: true }
+    ]
+    for (const { color, check } of candidates) {
+        if (typeof color !== 'string' || !color.trim() || !(parseColor(color)[3] > 0)) continue
+        const opaque = opaqueSurface([surface, color])
+        if (check && contrast(opaque, surface) < ACCENT_CONTRAST) continue
+        const onPrimary = contrast(opaque, '#ffffff') >= contrast(opaque, '#000000') ? '#ffffff' : '#000000'
+        return { primary: color, onPrimary }
+    }
+    return { primary: textColor || 'currentColor', onPrimary: surface }
+}
+
 @customElement('widget-form-versionplaceholder')
 export class WidgetForm extends LitElement {
     @property({ type: Object })
@@ -1354,6 +1392,13 @@ export class WidgetForm extends LitElement {
         const raisedColor = raisedSurface(bgColorOpaque)
         const darkSurface = isDarkSurface(bgColorOpaque)
         this.scrimOpacity = darkSurface ? SCRIM_OPACITY_DARK : SCRIM_OPACITY_LIGHT
+        // The fields sit in the dialog in Form Open Button mode, else on the tile.
+        const { primary, onPrimary } = accentColors(
+            this.inputData?.accentColor,
+            this.theme?.theme_object?.color?.[0],
+            this.inputData?.formButton ? raisedColor : bgColorOpaque,
+            fontColor
+        )
         // A blank or non-string icon name keeps the plus sign; the label names
         // the form, since a custom icon need not mean "add".
         const iconName = this.inputData?.formButtonStyle?.iconName
@@ -1367,6 +1412,12 @@ export class WidgetForm extends LitElement {
                     --md-sys-color-on-surface-variant: ${fontColor};
                     --md-sys-color-outline: ${fontColor};
                     --md-sys-color-surface-container: ${bgColorOpaque};
+                    /* The highlight colour (accentColors()) in place of
+                       Material's fixed purple, and the keyboard focus ring
+                       with it. */
+                    --md-sys-color-primary: ${primary};
+                    --md-sys-color-on-primary: ${onPrimary};
+                    --md-focus-ring-color: ${primary};
                     /* Error text and outlines: Material's light-scheme red
                        does not read on a dark surface, its dark-scheme one
                        does. */

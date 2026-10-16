@@ -113,6 +113,13 @@
                 }
             }
         },
+        "accentColor": {
+            "title": "Highlight Color",
+            "description": "Color of the outline and label of the field being edited, of checked checkboxes and of the Submit button. Leave empty to pick it automatically: the theme's first chart color when it stands out clearly from the form's background (a contrast of at least 3:1), otherwise the form's text color. Set it to match an application's brand color; a chosen color is used as is, so pick one that reads on the background.",
+            "dataDrivenDisabled": true,
+            "type": "color",
+            "order": 5.5
+        },
         "deleteButton": {
             "title": "Show Delete Button",
             "description": "When enabled, shows a delete button that allows users to remove existing entries.",
