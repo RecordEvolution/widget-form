@@ -38,9 +38,10 @@ type TargetRef = {
 type ValueItem = TargetRef & { value: unknown }
 
 // A file for the host to store in the app's FleetFiles namespace before it
-// writes the row; the column gets the stored object's key. Only
-// file-data-submit carries these.
-type FileItem = TargetRef & { file: File; namespace: string; contentType: string }
+// writes the row; the column gets the stored object's key, and urlColumn, when
+// the field names one, the object's permanent URL, which only the host can
+// build. Only file-data-submit carries these.
+type FileItem = TargetRef & { file: File; namespace: string; contentType: string; urlColumn?: TargetRef }
 
 // The detail of file-data-submit. The host claims the event by calling
 // waitUntil() synchronously, while the event is dispatched, with a promise
@@ -153,7 +154,7 @@ const formatBytes = (bytes: number): string => {
 // whose last segment is the file's own name.
 const fileNameOfKey = (key: string): string => key.split('/').filter(Boolean).pop() ?? key
 
-// A column a file field writes beside the key: name, size or type.
+// A column a file field writes beside the key: name, size, type or URL.
 const companionRef = (target: any): TargetRef | undefined =>
     target?.tablename && target?.column
         ? {
@@ -570,6 +571,8 @@ export class WidgetForm extends LitElement {
                 if (field.type === 'file') {
                     for (const companion of this.fileCompanions(field))
                         submitData.push({ ...companion.ref, value: null })
+                    const urlRef = companionRef(field.fileUrlColumn)
+                    if (urlRef) submitData.push({ ...urlRef, value: null })
                 }
                 return
             }
@@ -643,11 +646,11 @@ export class WidgetForm extends LitElement {
     }
 
     // What a visible file field submits. A new file goes to the host to
-    // upload, with its name, size and type for the companion columns. Without
-    // one the record keeps its file: the pre-filled key is written back, and
-    // with no pre-filled key the columns are left out, never set to null, so
-    // a table with entity keys carries the previous values over. A delete
-    // never uploads.
+    // upload, with its name, size and type for the companion columns and the
+    // URL column for the host to fill. Without one the record keeps its file:
+    // the pre-filled key is written back, and with no pre-filled key the
+    // columns are left out, never set to null, so a table with entity keys
+    // carries the previous values over. A delete never uploads.
     fileFieldItems(field: Column, i: number, target: TargetRef, action: string): (ValueItem | FileItem)[] {
         const file = action === 'delete' ? undefined : this.chosenFiles[i]
         const namespace = typeof field.fileNamespace === 'string' ? field.fileNamespace.trim() : ''
@@ -656,8 +659,14 @@ export class WidgetForm extends LitElement {
             // The picker refused anything else already; this keeps a
             // mistyped file from slipping through a race.
             if (contentType) {
+                // The URL column is cleared ahead of the file item: the host
+                // writes the new URL after it, and a later item for a column
+                // wins, while a host that writes no URL leaves it empty
+                // instead of carrying the previous file's URL over.
+                const urlRef = companionRef(field.fileUrlColumn)
                 return [
-                    { ...target, file, namespace, contentType },
+                    ...(urlRef ? [{ ...urlRef, value: null }] : []),
+                    { ...target, file, namespace, contentType, ...(urlRef ? { urlColumn: urlRef } : {}) },
                     ...this.fileCompanions(field).map(({ ref, value }) => ({
                         ...ref,
                         value: value(file, contentType)

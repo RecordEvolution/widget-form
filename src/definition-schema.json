@@ -418,12 +418,23 @@
                         },
                         "order": 18
                     },
+                    "fileUrlColumn": {
+                        "title": "File URL Column",
+                        "type": "targetColumn",
+                        "description": "Optional: a string column, in the same table as the target column, that receives the stored file's permanent platform URL, so that other widgets can show or link the file, such as an embed of a PDF or an image. Opening it needs a signed-in IronFlock session. Written only when a new file is uploaded; it stays empty where the installation serves no file links, and with a Studio version that does not write it.",
+                        "dataDrivenDisabled": true,
+                        "condition": {
+                            "relativePath": "../type",
+                            "showIfValueIn": ["file"]
+                        },
+                        "order": 19
+                    },
                     "conditionalDisplay": {
                         "title": "Conditional Display",
                         "type": "object",
                         "description": "Optionally show this field only when another field in this form currently holds one of a set of values. Leave the controlling field empty to always show this field.",
                         "dataDrivenDisabled": true,
-                        "order": 19,
+                        "order": 20,
                         "properties": {
                             "conditionField": {
                                 "title": "Conditional On Field",

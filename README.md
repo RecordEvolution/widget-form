@@ -103,6 +103,7 @@ interface FormField {
     fileNameColumn?: TargetColumn // For file: gets the original file name
     fileSizeColumn?: TargetColumn // For file: gets the size in bytes
     fileTypeColumn?: TargetColumn // For file: gets the content type
+    fileUrlColumn?: TargetColumn // For file: gets the file's permanent URL (Studio writes it)
 }
 ```
 
@@ -113,7 +114,8 @@ A `file` field stores one file in the app's file storage (FleetFiles) and writes
 - The field is a drop zone: click it to pick a file or drop one on it. It shows the file's name and size, and a button to remove it. Reset clears it.
 - `acceptedFileTypes` (MIME types, `type/*` allowed) filters the picker and refuses other files on the spot; so does `maxFileSizeMB`. The browser's type is used when it fits, otherwise the one the file's extension stands for, so a CSV that Windows calls `application/vnd.ms-excel` is still `text/csv`.
 - `fileNamespace` names a namespace from the `files` section of the app's data template. Its own `contentTypes` and `maxObjectBytes` apply as well. Files up to 6 MB upload on every installation; larger ones only where the platform can issue upload links (the cloud, not an appliance).
-- In an edit form, bind `preFilledValue` to the record's key column. The field then shows that file (the key's last segment is the file name), and a save without a new file writes the key back unchanged. Without a pre-filled key and without a new file, the column is left out of the row, never set to null, so a table with entity keys keeps its previous value. The name, size and type columns are only written with a new file. A file field hidden by Conditional Display submits null, like every other field.
+- `fileUrlColumn` gets the stored file's permanent platform URL, so other widgets can show or link the file: an embed of a PDF, an image. Opening it needs a signed-in IronFlock session. Studio builds it after the upload; it stays empty where the installation serves no file links, and with a Studio version that does not write it.
+- In an edit form, bind `preFilledValue` to the record's key column. The field then shows that file (the key's last segment is the file name), and a save without a new file writes the key back unchanged. Without a pre-filled key and without a new file, the column is left out of the row, never set to null, so a table with entity keys keeps its previous value. The name, size, type and URL columns are only written with a new file. A file field hidden by Conditional Display submits null, like every other field.
 
 The widget never uploads anything itself. A save with a new file dispatches `file-data-submit` instead of `data-submit`:
 
@@ -121,13 +123,16 @@ The widget never uploads anything itself. A save with a new file dispatches `fil
 detail: {
     items: Array<
         | { swarm_app_databackend_key, table_name, column_name, value } // as in data-submit
-        | { swarm_app_databackend_key, table_name, column_name, file: File, namespace: string, contentType: string }
+        | {
+              swarm_app_databackend_key, table_name, column_name, file: File, namespace: string, contentType: string
+              urlColumn?: { swarm_app_databackend_key, table_name, column_name } // the field's fileUrlColumn
+          }
     >
     waitUntil(outcome: Promise<unknown>): void
 }
 ```
 
-The host claims the event by calling `waitUntil()` while it is dispatched. It uploads each `file` under a key of its choosing, puts the key in as that item's value, and writes the rows only when every upload succeeded. The form shows "Saving…" until the promise settles. If it resolves, the form resets and the dialog closes. If it rejects, the form keeps its values and shows the error's message. A host that does not know the event (Studio before file support) never claims it, and the form says that it cannot upload and saves nothing, rather than sending a `File` through `data-submit`, which would write garbage into the column.
+The host claims the event by calling `waitUntil()` while it is dispatched. It uploads each `file` under a key of its choosing, puts the key in as that item's value, writes the object's permanent URL into the item's `urlColumn` (null where it cannot build one), and writes the rows only when every upload succeeded. A null item for the URL column comes ahead of the file item, and a later item for the same column wins: a host that writes no URL leaves the column empty instead of keeping another file's URL. The form shows "Saving…" until the promise settles. If it resolves, the form resets and the dialog closes. If it rejects, the form keeps its values and shows the error's message. A host that does not know the event (Studio before file support) never claims it, and the form says that it cannot upload and saves nothing, rather than sending a `File` through `data-submit`, which would write garbage into the column.
 
 ## Development
 

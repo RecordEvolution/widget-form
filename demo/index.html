@@ -80,7 +80,8 @@
                         description: 'A file whose name contains "fail" is refused by the demo host',
                         fileNamespace: 'documents',
                         acceptedFileTypes: 'application/pdf, image/*',
-                        maxFileSizeMB: 6
+                        maxFileSizeMB: 6,
+                        fileUrlColumn: { tablename: 'documents', column: 'file_url' }
                     },
                     {
                         label: 'Attachment',
@@ -106,12 +107,15 @@
             console.log('data', data)
 
             // A stand-in for Studio: it logs what it would write, and for a
-            // save with files "uploads" them for a second and a half.
+            // save with files "uploads" them for a second and a half, with the
+            // URL it would write into a file field's URL column.
             widget.addEventListener('data-submit', (event) => console.log('data-submit', event.detail))
             if (!params.has('oldhost')) {
                 widget.addEventListener('file-data-submit', (event) => {
                     const { items, waitUntil } = event.detail
                     console.log('file-data-submit', items)
+                    for (const item of items.filter((item) => item.file && item.urlColumn))
+                        console.log(`would write https://files.example.com/f/1/${item.namespace}/<key> into ${item.urlColumn.column_name}`)
                     waitUntil(
                         new Promise((resolve, reject) =>
                             setTimeout(() => {

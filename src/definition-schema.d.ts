@@ -167,6 +167,7 @@ export type FormFields = {
     fileNameColumn?: FileNameColumn;
     fileSizeColumn?: FileSizeColumn;
     fileTypeColumn?: FileTypeColumn;
+    fileUrlColumn?: FileURLColumn;
     conditionalDisplay?: ConditionalDisplay;
     [k: string]: unknown;
 }[];
@@ -264,6 +265,12 @@ export interface FileSizeColumn {
  * Optional: a string column, in the same table as the target column, that receives the uploaded file's content type, such as 'application/pdf'. Written only when a new file is uploaded.
  */
 export interface FileTypeColumn {
+    [k: string]: unknown;
+}
+/**
+ * Optional: a string column, in the same table as the target column, that receives the stored file's permanent platform URL, so that other widgets can show or link the file, such as an embed of a PDF or an image. Opening it needs a signed-in IronFlock session. Written only when a new file is uploaded; it stays empty where the installation serves no file links, and with a Studio version that does not write it.
+ */
+export interface FileURLColumn {
     [k: string]: unknown;
 }
 /**
