@@ -62,9 +62,17 @@ export type PostDeleteNavigationVariables = {
  */
 export type Label1 = string;
 /**
- * The input control type: 'dropdown' for selection from predefined options, 'textfield' for single-line text, 'numberfield' for numeric values, 'checkbox' for boolean yes/no, 'textarea' for multi-line text, 'datetime' for date and time selection, 'file' for uploading one file into the app's file storage (FleetFiles), whose key is stored in the target column.
+ * The input control type: 'dropdown' for selection from predefined options, 'textfield' for single-line text, 'numberfield' for numeric values, 'checkbox' for boolean yes/no, 'textarea' for multi-line text, 'datetime' for date and time selection, 'file' for uploading one file into the app's file storage (FleetFiles), whose key is stored in the target column, 'secret' for a password, token or key that is masked while it is typed (a button shows it). A secret field always starts empty and has no pre-filled value: a saved secret is never shown again. Left empty, it leaves its column out of the save, so a table that keeps the latest row per entity (maintainLatestFlagFor) keeps the stored secret and any other table stores NULL. Point it at a string column declared 'secret: true' in the data template, which FleetDB encrypts and never returns to a board; any other column stores the value as plain text. Required means a new value must be typed on every save, so leave it off in a form that edits existing records.
  */
-export type FieldType = "dropdown" | "textfield" | "numberfield" | "checkbox" | "textarea" | "datetime" | "file";
+export type FieldType =
+    | "dropdown"
+    | "textfield"
+    | "numberfield"
+    | "checkbox"
+    | "textarea"
+    | "datetime"
+    | "file"
+    | "secret";
 /**
  * When enabled, this field is hidden from users but its value (typically a default or data-bound value) is still submitted with the form. Useful for including metadata, timestamps, or user IDs automatically.
  */
@@ -102,7 +110,7 @@ export type MinimumValue = number;
  */
 export type MaximumValue = number;
 /**
- * A regular expression pattern to validate text input (e.g., '^[A-Z]{2}[0-9]{4}$' for format like 'AB1234'). Leave empty to accept any text.
+ * A regular expression pattern to validate text input (e.g., '^[A-Z]{2}[0-9]{4}$' for format like 'AB1234'). For a secret field it checks a newly typed value, such as '^.{12,}$' for at least 12 characters. Leave empty to accept any text.
  */
 export type ValidationRegex = string;
 /**
@@ -173,7 +181,7 @@ export type FormFields = {
 }[];
 
 /**
- * A form widget for collecting user input and storing it in database tables. Use this widget to create data entry interfaces for manual input, configuration settings, user feedback, or any scenario requiring structured data collection. Supports various field types including text, numbers, dropdowns, checkboxes, textareas, datetime pickers and file uploads. Each field maps to a database column, enabling direct data persistence. Can display as a button-triggered modal or inline form.
+ * A form widget for collecting user input and storing it in database tables. Use this widget to create data entry interfaces for manual input, configuration settings, user feedback, or any scenario requiring structured data collection. Supports various field types including text, numbers, dropdowns, checkboxes, textareas, datetime pickers, masked secrets and file uploads. Each field maps to a database column, enabling direct data persistence. Can display as a button-triggered modal or inline form.
  */
 export interface FormConfiguration {
     title?: Title;

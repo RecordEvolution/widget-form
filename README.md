@@ -80,22 +80,23 @@ Each form field supports the following types:
 | `dropdown`    | Select from predefined options |
 | `datetime`    | Date/time picker               |
 | `file`        | Upload one file (FleetFiles)   |
+| `secret`      | Masked password or token       |
 
 ### Field Configuration
 
 ```ts
 interface FormField {
     label: string
-    type: 'dropdown' | 'textfield' | 'numberfield' | 'checkbox' | 'textarea' | 'datetime' | 'file'
+    type: 'dropdown' | 'textfield' | 'numberfield' | 'checkbox' | 'textarea' | 'datetime' | 'file' | 'secret'
     hiddenField?: boolean // Hide field but still submit value
     required?: boolean // Field must be filled
     description?: string // Hint text shown below field
     targetColumn?: TargetColumn // Database column mapping
-    preFilledValue?: string // For a file: the record's current key
+    preFilledValue?: string // For a file: the record's current key; not for a secret
     defaultValue?: string
     min?: number // For numberfield
     max?: number // For numberfield
-    validation?: string // Regex for textfield
+    validation?: string // Regex for textfield and secret
     values?: DropdownValue[] // For dropdown type
     fileNamespace?: string // For file: the app's FleetFiles namespace (required)
     acceptedFileTypes?: string // For file: 'application/pdf, image/*'
@@ -133,6 +134,15 @@ detail: {
 ```
 
 The host claims the event by calling `waitUntil()` while it is dispatched. It uploads each `file` under a key of its choosing, puts the key in as that item's value, writes the object's permanent URL into the item's `urlColumn` (null where it cannot build one), and writes the rows only when every upload succeeded. A null item for the URL column comes ahead of the file item, and a later item for the same column wins: a host that writes no URL leaves the column empty instead of keeping another file's URL. The form shows "Saving…" until the promise settles. If it resolves, the form resets and the dialog closes. If it rejects, the form keeps its values and shows the error's message. A host that does not know the event (Studio before file support) never claims it, and the form says that it cannot upload and saves nothing, rather than sending a `File` through `data-submit`, which would write garbage into the column.
+
+### Secret Fields
+
+A `secret` field takes a password, token or key without showing it: the input is masked, and an eye button shows what was typed. It is write-only: a saved secret never comes back to the widget, so the field has no pre-filled value and always starts empty.
+
+- Point it at a string column declared `secret: true` in the app's data template. FleetDB encrypts that column and never returns the value to a board (Studio shows `••••••••`); only the app's own containers can read it, with the SDK's `revealSecrets()`. Any other column stores the value as plain text.
+- Left empty, the field leaves its column out of the save. A table that keeps the latest row per entity (`maintainLatestFlagFor`) then carries the stored secret over; any other table stores NULL. The widget does not send FleetDB's keep sentinel (`__secret__`): on a table without entity keys FleetDB rejects the whole row, and Studio's publish does not report that, and a column that is not `secret: true` would store it literally.
+- `required` means a new value must be typed on every save, so leave it off in a form that edits existing records. `validation` checks a newly typed value, such as `^.{12,}$` for at least 12 characters.
+- The value is sent exactly as typed, spaces included. The browser is told it is a new password (`autocomplete="new-password"`), so it does not fill in the viewer's saved login.
 
 ## Development
 

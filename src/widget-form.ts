@@ -449,6 +449,9 @@ export class WidgetForm extends LitElement {
     // Why a file field refused the file it was given, by field index.
     @state() private fileErrors: Record<number, string> = {}
 
+    // The secret fields whose value is shown in clear text, by field index.
+    @state() private revealedSecrets: Record<number, boolean> = {}
+
     // The field index a file is being dragged over.
     @state() private dragTarget?: number
 
@@ -582,6 +585,11 @@ export class WidgetForm extends LitElement {
                 return
             }
 
+            if (field.type === 'secret') {
+                submitData.push(...this.secretFieldItems(i, targetColumn, formData))
+                return
+            }
+
             const rawValue = this.currentRawValue(field, i, formData)
             submitData.push({ ...targetColumn, value: this.formatValue(rawValue, field.type ?? 'textfield') })
         })
@@ -676,6 +684,18 @@ export class WidgetForm extends LitElement {
         }
         const existing = this.effectivePreFilledValue(field)
         return typeof existing === 'string' && existing.trim() ? [{ ...target, value: existing }] : []
+    }
+
+    // What a secret field submits: the value typed, as typed (spaces are part
+    // of a secret). A saved secret is never read back, so the field has no
+    // pre-filled value to write back: left empty, the column is left out,
+    // never set to null or '', and a table with entity keys carries the
+    // stored secret over. fleetdb's keep sentinel (__secret__) would do the
+    // same there, but fails the whole row unseen on other tables and is
+    // stored literally in a column that is not secret: true.
+    secretFieldItems(i: number, target: TargetRef, formData: FormData): ValueItem[] {
+        const typed = formData.get(`column-${i}`)
+        return typeof typed === 'string' && typed !== '' ? [{ ...target, value: typed }] : []
     }
 
     // Hand the save to the host, which stores the files and then writes the
@@ -803,6 +823,11 @@ export class WidgetForm extends LitElement {
         // A file field holds the name of its new file, or else the key of the
         // record's current one.
         if (field.type === 'file') return this.chosenFiles[i]?.name ?? this.effectivePreFilledValue(field) ?? ''
+        // A secret field holds only what was typed; a saved one is never read back.
+        if (field.type === 'secret') {
+            const typed = formData.get(name)
+            return typeof typed === 'string' ? typed : ''
+        }
         if (field.type === 'checkbox') return formData.has(name) ? 'true' : 'false'
         const entry = formData.get(name)
         return entry === null || entry === '' ? (this.effectiveDefaultValue(field) ?? '') : String(entry)
@@ -967,6 +992,36 @@ export class WidgetForm extends LitElement {
         `
     }
 
+    // A masked text field that always starts empty: a saved secret is never
+    // read back, and leaving the field empty keeps it (secretFieldItems()).
+    // The eye button shows what was typed. autocomplete="new-password" keeps
+    // the browser from filling in the viewer's saved IronFlock login.
+    renderSecretField(field: Column, i: number) {
+        const revealed = !!this.revealedSecrets[i]
+        const name = field.label || 'value'
+        return html`
+            <md-outlined-text-field
+                .name="column-${i}"
+                .label="${field.label ?? ''}"
+                .type=${revealed ? 'text' : 'password'}
+                autocomplete="new-password"
+                placeholder=${field.required ? '' : 'Leave empty to keep the current value'}
+                .pattern="${browserSafePattern(field.validation)}"
+                supporting-text=${field.description ?? ''}
+                validation-message="${field.validationMessage ?? 'Invalid input'}"
+                ?required=${!!field.required}
+            >
+                <md-icon-button
+                    slot="trailing-icon"
+                    type="button"
+                    aria-label="${revealed ? 'Hide' : 'Show'} ${name}"
+                    @click=${() => (this.revealedSecrets = { ...this.revealedSecrets, [i]: !revealed })}
+                    ><md-icon>${revealed ? 'visibility_off' : 'visibility'}</md-icon></md-icon-button
+                >
+            </md-outlined-text-field>
+        `
+    }
+
     // A drop zone over a transparent native file input: the input takes the
     // clicks, the keyboard focus and the drops itself, and its required rule
     // and the browser's message sit on the box. The box shows the new file,
@@ -1057,6 +1112,7 @@ export class WidgetForm extends LitElement {
         this.fieldValues = {}
         this.chosenFiles = {}
         this.fileErrors = {}
+        this.revealedSecrets = {}
         this.submitError = ''
     }
 
@@ -1594,6 +1650,8 @@ export class WidgetForm extends LitElement {
                                     return this.renderCheckbox(field, i)
                                 case 'file':
                                     return this.renderFileField(field, i)
+                                case 'secret':
+                                    return this.renderSecretField(field, i)
                             }
                         }
                     )}

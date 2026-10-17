@@ -64,8 +64,8 @@
             const themeName = themes[params.get('theme')] ? params.get('theme') : 'light'
             if (themeName === 'chalk') document.body.style.backgroundColor = '#1f2833'
 
-            // File fields stay out of default-data.json, which seeds every new
-            // form tile; the demo adds one new and one pre-filled field.
+            // File and secret fields stay out of default-data.json, which seeds
+            // every new form tile; the demo adds two of each (the second file field pre-filled).
             const data = {
                 ...defaultData,
                 formButton: params.has('dialog'),
@@ -88,6 +88,17 @@
                         type: 'file',
                         fileNamespace: 'documents',
                         preFilledValue: '2026-10-15/k3x9q2m7a1/Maintenance report.pdf'
+                    },
+                    {
+                        label: 'Device Password',
+                        type: 'secret',
+                        required: true,
+                        description: 'At least 8 characters',
+                        validation: '^.{8,}$'
+                    },
+                    {
+                        label: 'API Token',
+                        type: 'secret'
                     }
                 ]
             }
