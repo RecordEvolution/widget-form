@@ -385,6 +385,10 @@ const contrast = (a: string, b: string): number => {
     return (lighter + 0.05) / (darker + 0.05)
 }
 
+// Black or white, whichever contrasts more with an opaque #rrggbb colour.
+const onColor = (opaque: string): string =>
+    contrast(opaque, '#ffffff') >= contrast(opaque, '#000000') ? '#ffffff' : '#000000'
+
 // WCAG's minimum contrast for a control's outline against its surroundings.
 const ACCENT_CONTRAST = 3
 
@@ -411,11 +415,29 @@ const accentColors = (
         if (typeof color !== 'string' || !color.trim() || !(parseColor(color)[3] > 0)) continue
         const opaque = opaqueSurface([surface, color])
         if (check && contrast(opaque, surface) < ACCENT_CONTRAST) continue
-        const onPrimary = contrast(opaque, '#ffffff') >= contrast(opaque, '#000000') ? '#ffffff' : '#000000'
-        return { primary: color, onPrimary }
+        return { primary: color, onPrimary: onColor(opaque) }
     }
     return { primary: textColor || 'currentColor', onPrimary: surface }
 }
+
+// Size tokens of the regular form open button (Floating Action Button off):
+// 32, 40 and 56px tall, as Material 3's extra small, small and medium
+// buttons. Medium is Material Web's own 40px button and needs none.
+const OPEN_BUTTON_SIZES: Record<string, string> = {
+    small: `--md-filled-button-container-height: 32px; --md-filled-button-icon-size: 18px;
+        --md-filled-button-label-text-size: 14px; --md-filled-button-label-text-line-height: 20px;
+        --md-filled-button-with-leading-icon-leading-space: 12px;
+        --md-filled-button-with-leading-icon-trailing-space: 16px;`,
+    large: `--md-filled-button-container-height: 56px; --md-filled-button-icon-size: 24px;
+        --md-filled-button-label-text-size: 16px; --md-filled-button-label-text-line-height: 24px;
+        --md-filled-button-with-leading-icon-leading-space: 24px;
+        --md-filled-button-with-leading-icon-trailing-space: 32px;`
+}
+
+// The trailing space of that button with an empty Label Text, by size: its
+// leading space less the 8px gap Material keeps after the icon even with no
+// label, which centres the icon.
+const ICON_ONLY_TRAILING_SPACE: Record<string, string> = { small: '4px', medium: '8px', large: '16px' }
 
 let maskSheet: CSSStyleSheet | null | undefined
 
@@ -1522,6 +1544,12 @@ export class WidgetForm extends LitElement {
             --md-fab-label-text-color: white;
         }
 
+        /* A long label is cut with an ellipsis, inside the tile. */
+        .open-btn {
+            margin: 8px;
+            max-width: calc(100% - 16px);
+        }
+
         .delete-btn {
             --md-filled-button-container-color: #d32f2f;
             --md-filled-button-label-text-color: #fff;
@@ -1574,7 +1602,8 @@ export class WidgetForm extends LitElement {
         )
         // A blank or non-string icon name keeps the plus sign; the label names
         // the form, since a custom icon need not mean "add".
-        const iconName = this.inputData?.formButtonStyle?.iconName
+        const buttonStyle = this.inputData?.formButtonStyle
+        const iconName = buttonStyle?.iconName
         const fabIcon = typeof iconName === 'string' && iconName.trim() ? iconName.trim() : 'add'
         const title = this.inputData?.title
         const fabLabel = typeof title === 'string' && title.trim() ? title.trim() : 'Open form'
@@ -1617,21 +1646,22 @@ export class WidgetForm extends LitElement {
             </style>
             <div class="header">
                 ${this.inputData?.formButton
-                    ? html`
-                          <md-fab
-                              aria-label=${fabLabel}
-                              .size=${this.inputData.formButtonStyle?.size || 'medium'}
-                              style="margin: 8px; --md-fab-container-color: ${(this.inputData.formButtonStyle
-                                  ?.bgColor ||
-                                  this.theme?.theme_object?.color?.[0]) ??
-                              '#9064f7'}; --md-fab-icon-color: ${(this.inputData.formButtonStyle?.color ||
-                                  this.theme?.theme_object?.color?.[1]) ??
-                              '#fff'}"
-                              @click=${this.openFormDialog}
-                          >
-                              <md-icon slot="icon">${fabIcon}</md-icon>
-                          </md-fab>
-                      `
+                    ? buttonStyle?.fab === false
+                        ? this.renderOpenButton(fabIcon, fabLabel, bgColorOpaque)
+                        : html`
+                              <md-fab
+                                  aria-label=${fabLabel}
+                                  .size=${buttonStyle?.size || 'medium'}
+                                  style="margin: 8px; --md-fab-container-color: ${(buttonStyle?.bgColor ||
+                                      this.theme?.theme_object?.color?.[0]) ??
+                                  '#9064f7'}; --md-fab-icon-color: ${(buttonStyle?.color ||
+                                      this.theme?.theme_object?.color?.[1]) ??
+                                  '#fff'}"
+                                  @click=${this.openFormDialog}
+                              >
+                                  <md-icon slot="icon">${fabIcon}</md-icon>
+                              </md-fab>
+                          `
                     : nothing}
                 ${!this.inputData?.formButton
                     ? html`
@@ -1722,6 +1752,51 @@ export class WidgetForm extends LitElement {
                       </md-dialog>
                   `}
         `
+    }
+
+    /**
+     * The regular form open button (Floating Action Button off): Material's
+     * filled button with the icon and the Label Text. An empty Label Text
+     * stays empty on screen; screen readers then get the FAB's name, as the
+     * icon is hidden from them. It takes the FAB's background; its label and
+     * icon need to read on that, so unset they are black or white by
+     * contrast, not the theme's second palette colour the FAB's icon defaults
+     * to.
+     */
+    renderOpenButton(icon: string, ariaLabel: string, surface: string) {
+        const style = this.inputData?.formButtonStyle
+        const label = typeof style?.label === 'string' ? style.label.trim() : ''
+        const container = String((style?.bgColor || this.theme?.theme_object?.color?.[0]) ?? '#9064f7')
+        const configured: unknown = style?.color
+        const content =
+            typeof configured === 'string' && configured.trim()
+                ? configured
+                : onColor(opaqueSurface([surface, container]))
+        const tokens = [
+            `--md-filled-button-container-color: ${container};`,
+            ...['label-text', 'icon'].flatMap((part) =>
+                ['', 'hover-', 'focus-', 'pressed-'].map(
+                    (state) => `--md-filled-button-${state}${part}-color: ${content};`
+                )
+            ),
+            `--md-filled-button-hover-state-layer-color: ${content};`,
+            `--md-filled-button-pressed-state-layer-color: ${content};`,
+            OPEN_BUTTON_SIZES[String(style?.size)] ?? '',
+            label
+                ? ''
+                : `--md-filled-button-with-leading-icon-trailing-space: ${
+                      ICON_ONLY_TRAILING_SPACE[String(style?.size)] ?? ICON_ONLY_TRAILING_SPACE.medium
+                  };`
+        ]
+        return html`<md-filled-button
+            class="open-btn"
+            type="button"
+            has-icon
+            aria-label=${label ? nothing : ariaLabel}
+            style=${tokens.join(' ')}
+            @click=${this.openFormDialog}
+            ><md-icon slot="icon">${icon}</md-icon>${label}</md-filled-button
+        >`
     }
 
     renderForm() {

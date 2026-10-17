@@ -18,7 +18,15 @@ export type Subtitle = string;
  */
 export type FormOpenButton = boolean;
 /**
- * The size of the form open button. Options include small, medium, and large.
+ * When enabled (the default, also when unset), the form opens from a round floating action button that shows only the icon. When disabled, it opens from a regular button that shows the icon followed by the Label Text, which says what the form is for at a glance.
+ */
+export type FloatingActionButton = boolean;
+/**
+ * Text on the regular button that opens the form, next to its icon (e.g., 'Report issue', 'Add reading'). Left empty, the button shows only the icon. Only applies when Floating Action Button is disabled.
+ */
+export type LabelText = string;
+/**
+ * The size of the form open button: small, medium (the default) or large. A floating action button is 40, 56 or 96px; a regular button is 32, 40 or 56px tall.
  */
 export type Size = "small" | "medium" | "large";
 /**
@@ -208,12 +216,14 @@ export interface FormConfiguration {
     [k: string]: unknown;
 }
 /**
- * Customization options for the form open button's appearance. Configure the size, background color, icon and icon color to match your application's design. These settings only apply when the Form Open Button is enabled.
+ * Customization options for the form open button's appearance. Choose a round floating action button with an icon, or a regular button with an icon and a label text, and configure its size, colors and icon to match your application's design. These settings only apply when the Form Open Button is enabled.
  */
 export interface FormOpenButtonStyle {
+    fab?: FloatingActionButton;
+    label?: LabelText;
     size?: Size;
     bgColor?: BackgroundColor;
-    color?: IconColor;
+    color?: IconAndLabelColor;
     iconName?: IconName;
     [k: string]: unknown;
 }
@@ -224,9 +234,9 @@ export interface BackgroundColor {
     [k: string]: unknown;
 }
 /**
- * The color of the icon on the form open button. Can be set to a specific color value (e.g., '#ffffff' for white) or left as default to use the theme's primary contrast color.
+ * The color of the icon on the form open button, and of the Label Text on a regular button. Can be set to a specific color value (e.g., '#ffffff' for white) or left as default: a floating action button then uses the theme's second chart color, a regular button black or white, whichever reads better on its background.
  */
-export interface IconColor {
+export interface IconAndLabelColor {
     [k: string]: unknown;
 }
 /**

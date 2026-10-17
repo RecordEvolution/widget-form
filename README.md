@@ -45,10 +45,28 @@ interface FormConfiguration {
     title?: string
     subTitle?: string
     formButton?: boolean // Show button to open form dialog
+    formButtonStyle?: FormButtonStyle // How that button looks
     formDialogSize?: FormDialogSize // Minimum size of that dialog
     formFields?: FormField[]
 }
 ```
+
+### Form Open Button
+
+With `formButton: true` the tile shows only a button that opens the form in a dialog. `formButtonStyle` sets how it looks:
+
+```ts
+interface FormButtonStyle {
+    fab?: boolean // Floating action button (default); false for a regular button
+    label?: string // Label Text of the regular button
+    size?: 'small' | 'medium' | 'large'
+    bgColor?: string // Background colour
+    color?: string // Icon colour, and label colour on the regular button
+    iconName?: string // Material icon name, 'add' by default
+}
+```
+
+By default (`fab` unset or `true`) it is a round Material floating action button that shows only the icon, 40, 56 or 96px by `size`. With `fab: false` it is a Material filled button with the icon and `label` (only the icon when `label` is empty), 32, 40 or 56px tall by `size`; a long label is cut with an ellipsis at the tile's edge. Unset, its label and icon are black or white, whichever reads on its background.
 
 ### Dialog Size
 

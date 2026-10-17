@@ -57,8 +57,11 @@
             import vintage from './themes/vintage.json'
 
             // Demo switches: ?theme=chalk|vintage, ?dialog (Form Open Button),
-            // ?icon=<Material icon name> (its icon), ?accent=<colour> (Highlight
-            // Color), ?oldhost (a Studio that does not know file-data-submit).
+            // ?icon=<Material icon name> (its icon), ?label=<text> (a regular
+            // button with this Label Text, Floating Action Button off; empty for
+            // only the icon), ?size=small|medium|large (its size), ?accent=<colour>
+            // (Highlight Color), ?oldhost (a Studio that does not know
+            // file-data-submit).
             const params = new URLSearchParams(location.search)
             const themes = { light, chalk, vintage }
             const themeName = themes[params.get('theme')] ? params.get('theme') : 'light'
@@ -69,7 +72,12 @@
             const data = {
                 ...defaultData,
                 formButton: params.has('dialog'),
-                formButtonStyle: { iconName: params.get('icon') ?? undefined },
+                formButtonStyle: {
+                    fab: !params.has('label'),
+                    label: params.get('label') ?? undefined,
+                    size: params.get('size') ?? undefined,
+                    iconName: params.get('icon') ?? undefined
+                },
                 accentColor: params.get('accent') ?? undefined,
                 formFields: [
                     ...defaultData.formFields,
