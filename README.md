@@ -96,7 +96,9 @@ interface FormField {
     defaultValue?: string
     min?: number // For numberfield
     max?: number // For numberfield
-    validation?: string // Regex for textfield and secret
+    validation?: string // Regex for textfield and secret (a secret's minimum requirements)
+    validationMessage?: string // For textfield and secret: shown when the regex fails
+    browserPasswordManager?: boolean // For secret: let the browser save and fill it (default off)
     values?: DropdownValue[] // For dropdown type
     fileNamespace?: string // For file: the app's FleetFiles namespace (required)
     acceptedFileTypes?: string // For file: 'application/pdf, image/*'
@@ -141,8 +143,9 @@ A `secret` field takes a password, token or key without showing it: the input is
 
 - Point it at a string column declared `secret: true` in the app's data template. FleetDB encrypts that column and never returns the value to a board (Studio shows `••••••••`); only the app's own containers can read it, with the SDK's `revealSecrets()`. Any other column stores the value as plain text.
 - Left empty, the field leaves its column out of the save. A table that keeps the latest row per entity (`maintainLatestFlagFor`) then carries the stored secret over; any other table stores NULL. The widget does not send FleetDB's keep sentinel (`__secret__`): on a table without entity keys FleetDB rejects the whole row, and Studio's publish does not report that, and a column that is not `secret: true` would store it literally.
-- `required` means a new value must be typed on every save, so leave it off in a form that edits existing records. `validation` checks a newly typed value, such as `^.{12,}$` for at least 12 characters.
-- The value is sent exactly as typed, spaces included. The browser is told it is a new password (`autocomplete="new-password"`), so it does not fill in the viewer's saved login.
+- `browserPasswordManager` decides whether the browser treats the field as a password. Off (the default), the field is a text input drawn as dots (`-webkit-text-security`), so neither the browser nor a password manager extension offers to save, fill or generate anything, which suits a PIN; `autocomplete="off"` keeps the value out of the browser's form history, phones do not capitalise or correct it, and copying is blocked while it is masked. On, it is a password input marked `autocomplete="new-password"`: the browser may offer a strong password and to save it, but does not fill in the viewer's IronFlock login.
+- `required` means a new value must be typed on every save, so leave it off in a form that edits existing records. `validation` sets the minimum requirements for a newly typed value, such as `^.{12,}$` for at least 12 characters or `(?=.*[0-9])(?=.*[A-Za-z]).{10,}` for 10 with a letter and a digit; the whole value must match. Set `validationMessage` to say what is required ("At least 10 characters, with a letter and a digit"): it replaces the browser's generic "Please match the requested format", which tells nothing about a value one cannot see. Repeat it in `description` to show it before anyone types.
+- The value is sent exactly as typed, spaces included.
 
 ## Development
 

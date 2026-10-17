@@ -417,6 +417,46 @@ const accentColors = (
     return { primary: textColor || 'currentColor', onPrimary: surface }
 }
 
+let maskSheet: CSSStyleSheet | null | undefined
+
+// The sheet that masks a secret field kept away from the browser's password
+// manager: its plain text input is drawn as discs while the text field has
+// the masked attribute, and its placeholder stays readable. Built on first
+// use; null where the browser cannot construct style sheets.
+const secretMaskSheet = (): CSSStyleSheet | null => {
+    if (maskSheet === undefined) {
+        try {
+            maskSheet = new CSSStyleSheet()
+            maskSheet.replaceSync(`
+                :host([masked]) input {
+                    -webkit-text-security: disc;
+                }
+                input::placeholder {
+                    -webkit-text-security: none;
+                }
+            `)
+        } catch {
+            maskSheet = null
+        }
+    }
+    return maskSheet
+}
+
+// What the input of a secret field kept away from the password manager also
+// carries: no capitalising, correcting or spell-checking a value nobody sees
+// (a phone would otherwise change a secret it cannot show), and the opt-outs
+// of the common password manager extensions (1Password, LastPass, Bitwarden,
+// Dashlane), which also look at text inputs.
+const UNMANAGED_INPUT_ATTRIBUTES: [string, string][] = [
+    ['autocapitalize', 'off'],
+    ['autocorrect', 'off'],
+    ['spellcheck', 'false'],
+    ['data-1p-ignore', ''],
+    ['data-lpignore', 'true'],
+    ['data-bwignore', ''],
+    ['data-form-type', 'other']
+]
+
 @customElement('widget-form-versionplaceholder')
 export class WidgetForm extends LitElement {
     @property({ type: Object })
@@ -492,6 +532,7 @@ export class WidgetForm extends LitElement {
 
     protected updated(_changedProperties: PropertyValues): void {
         this.patchDialogScrim()
+        this.patchSecretFields()
         this.toggleAttribute('fab-mode', !!this.inputData?.formButton)
     }
 
@@ -539,6 +580,39 @@ export class WidgetForm extends LitElement {
             }
         `)
         patch.opacity = this.scrimOpacity
+    }
+
+    /**
+     * A secret field's <input> lives in md-outlined-text-field's shadow root,
+     * out of reach of this element's styles and of attributes the text field
+     * does not forward. Every secret field gets the mask sheet, which draws
+     * discs while the host has the masked attribute (only fields without the
+     * browser's password manager get it), and the input of such a field gets
+     * UNMANAGED_INPUT_ATTRIBUTES; a field switched back to the password
+     * manager loses them. The input exists only once the text field has
+     * rendered, so that part waits for it.
+     */
+    private patchSecretFields() {
+        const fields = this.renderRoot.querySelectorAll<HTMLElement & { updateComplete: Promise<unknown> }>(
+            'md-outlined-text-field.secret'
+        )
+        if (!fields.length) return
+        const sheet = secretMaskSheet()
+        fields.forEach((field) => {
+            const root = field.shadowRoot
+            if (!root) return
+            if (sheet && !root.adoptedStyleSheets.includes(sheet))
+                root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet]
+            const unmanaged = field.classList.contains('unmanaged')
+            field.updateComplete.then(() => {
+                const input = root.querySelector('input')
+                if (!input) return
+                for (const [name, value] of UNMANAGED_INPUT_ATTRIBUTES) {
+                    if (unmanaged) input.setAttribute(name, value)
+                    else input.removeAttribute(name)
+                }
+            })
+        })
     }
 
     registerTheme(theme?: Theme) {
@@ -882,10 +956,27 @@ export class WidgetForm extends LitElement {
                 .placeholder="${field.defaultValue ?? ''}"
                 .pattern="${browserSafePattern(field.validation)}"
                 supporting-text=${field.description ?? ''}
-                validation-message="${field.validationMessage ?? 'Invalid input'}"
+                @input=${(event: Event) => this.syncValidationMessage(event, field)}
                 ?required=${field.required && !field.defaultValue && !field.preFilledValue}
             ></md-outlined-text-field>
         `
+    }
+
+    // The Validation Message in place of the browser's generic "Please match
+    // the requested format", which says nothing about a value one cannot see.
+    // md-outlined-text-field has no setting for it (a validation-message
+    // attribute does nothing), so it is the field's custom validity while the
+    // value does not match the Validation Regex. md-outlined-text-field shows
+    // it as the error once the form reports validity, as on Submit.
+    syncValidationMessage(event: Event, field: Column) {
+        const target = event.currentTarget as HTMLElement & {
+            setCustomValidity?: (message: string) => void
+            validity?: ValidityState
+        }
+        if (typeof target.setCustomValidity !== 'function') return
+        const message = typeof field.validationMessage === 'string' ? field.validationMessage.trim() : ''
+        target.setCustomValidity('')
+        if (message && target.validity?.patternMismatch) target.setCustomValidity(message)
     }
 
     renderNumberField(field: Column, i: number) {
@@ -994,21 +1085,38 @@ export class WidgetForm extends LitElement {
 
     // A masked text field that always starts empty: a saved secret is never
     // read back, and leaving the field empty keeps it (secretFieldItems()).
-    // The eye button shows what was typed. autocomplete="new-password" keeps
-    // the browser from filling in the viewer's saved IronFlock login.
+    // The eye button shows what was typed.
+    //
+    // With Browser Password Manager on it is a password input, and
+    // autocomplete="new-password" keeps the browser from filling in the
+    // viewer's saved IronFlock login. Off, the default: browsers and password
+    // manager extensions offer to save any password input, autocomplete="off"
+    // or not, which gets in the way of a PIN. So it is a text input masked by
+    // -webkit-text-security (patchSecretFields()), autocomplete="off" keeps
+    // the value out of the browser's form history, and copying is blocked
+    // while it is masked, as a password input does.
     renderSecretField(field: Column, i: number) {
         const revealed = !!this.revealedSecrets[i]
+        const managed = field.browserPasswordManager === true
+        const masked = !managed && !revealed
         const name = field.label || 'value'
+        const blockCopy = (event: Event) => {
+            if (masked) event.preventDefault()
+        }
         return html`
             <md-outlined-text-field
+                class=${managed ? 'secret' : 'secret unmanaged'}
+                ?masked=${masked}
                 .name="column-${i}"
                 .label="${field.label ?? ''}"
-                .type=${revealed ? 'text' : 'password'}
-                autocomplete="new-password"
+                .type=${managed && !revealed ? 'password' : 'text'}
+                autocomplete=${managed ? 'new-password' : 'off'}
+                @copy=${blockCopy}
+                @cut=${blockCopy}
                 placeholder=${field.required ? '' : 'Leave empty to keep the current value'}
                 .pattern="${browserSafePattern(field.validation)}"
                 supporting-text=${field.description ?? ''}
-                validation-message="${field.validationMessage ?? 'Invalid input'}"
+                @input=${(event: Event) => this.syncValidationMessage(event, field)}
                 ?required=${!!field.required}
             >
                 <md-icon-button

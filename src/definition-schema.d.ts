@@ -110,9 +110,17 @@ export type MinimumValue = number;
  */
 export type MaximumValue = number;
 /**
- * A regular expression pattern to validate text input (e.g., '^[A-Z]{2}[0-9]{4}$' for format like 'AB1234'). For a secret field it checks a newly typed value, such as '^.{12,}$' for at least 12 characters. Leave empty to accept any text.
+ * A regular expression pattern to validate text input (e.g., '^[A-Z]{2}[0-9]{4}$' for format like 'AB1234'). For a secret field it sets the minimum requirements for a newly typed value, such as '^.{12,}$' for at least 12 characters, '(?=.*[0-9])(?=.*[A-Za-z]).{10,}' for at least 10 characters with a letter and a digit, or '[0-9]{4}' for a 4-digit PIN. The whole value must match. Leave empty to accept any text.
  */
 export type ValidationRegex = string;
+/**
+ * Shown under the field when the value does not match the Validation Regex, in place of the browser's generic 'Please match the requested format'. Say what is required, such as 'At least 10 characters, with a letter and a digit': a masked secret field gives no other clue. Repeat it in the Hint Text to show it before the user types. Leave empty for the browser's message.
+ */
+export type ValidationMessage = string;
+/**
+ * For a secret field: when enabled, the browser and password manager extensions treat the field as a password, so they may offer to generate a strong one and to save what was typed. Off by default, which suits PINs and short codes: the value is still masked, but nothing offers to save, fill or generate it, and the browser keeps no record of it. Turn it on for real passwords that viewers want their browser to remember.
+ */
+export type BrowserPasswordManager = boolean;
 /**
  * The text shown to users in the dropdown list.
  */
@@ -168,6 +176,8 @@ export type FormFields = {
     min?: MinimumValue;
     max?: MaximumValue;
     validation?: ValidationRegex;
+    validationMessage?: ValidationMessage;
+    browserPasswordManager?: BrowserPasswordManager;
     values?: DropdownValues;
     fileNamespace?: FileNamespace;
     acceptedFileTypes?: AcceptedFileTypes;

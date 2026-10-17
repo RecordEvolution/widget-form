@@ -93,12 +93,17 @@
                         label: 'Device Password',
                         type: 'secret',
                         required: true,
-                        description: 'At least 8 characters',
-                        validation: '^.{8,}$'
+                        description: 'At least 8 characters; the browser may offer to save it',
+                        validation: '^.{8,}$',
+                        validationMessage: 'Use at least 8 characters.',
+                        browserPasswordManager: true
                     },
                     {
-                        label: 'API Token',
-                        type: 'secret'
+                        label: 'PIN',
+                        type: 'secret',
+                        description: '4 digits',
+                        validation: '^[0-9]{4}$',
+                        validationMessage: 'Enter exactly 4 digits.'
                     }
                 ]
             }
